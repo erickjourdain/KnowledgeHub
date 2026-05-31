@@ -1,0 +1,97 @@
+# =============================================
+# GÉNÉRAL
+# =============================================
+.DS_Store
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Fichiers sensibles
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+
+# =============================================
+# PYTHON / BACKEND (FastAPI)
+# =============================================
+# Virtual environment
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.pyright/
+.ruff_cache/
+
+# Alembic migrations (auto-générées)
+alembic/versions/*.py
+!alembic/versions/.gitkeep
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Docker
+.dockerignore
+
+# Divers
+temp/
+
+# Directory tracking
+# Track prompts/ and all its contents
+prompts/
+# Track knowledge_base/ directory but ignore its contents
+knowledge_base/*
+!knowledge_base/
+
+
+# =============================================
+# NODE.JS / FRONTEND (React + Vite)
+# =============================================
+node_modules/
+dist/
+dist-ssr/
+build/
+
+# Vite
+.vite/
+
+# npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Testing
+coverage/
+
+# =============================================
+# BASE DE DONNÉES & CACHE
+# =============================================
+*.db
+*.sqlite
+*.sqlite3
+
+
+# =============================================
+# CI/CD
+# =============================================
+.github/
+.gitlab-ci.yml
+.travis.yml
