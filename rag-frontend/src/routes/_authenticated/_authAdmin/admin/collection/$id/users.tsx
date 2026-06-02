@@ -53,7 +53,7 @@ export const Route = createFileRoute(
       queryFn: () => fetchUsers(page, pageSize, true)
     });
     const authorization =await queryClient.ensureQueryData({
-      queryKey: ['authorizedUsers', params.id, users.data.map(u => u.id)],
+      queryKey: ['authorizedUsers', params.id, users.data.map(u => u.id).join(',')],
       queryFn: () => fetchCollectionUsersStatut(
         params.id, 
         users.data.map(u => u.id)

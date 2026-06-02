@@ -1,5 +1,6 @@
 import { Box, Button, Container, FormControl, FormLabel, Paper, TextField, Typography } from '@mui/material';
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useState } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import type { CollectionCreate } from '@appTypes/Collection';
@@ -12,6 +13,7 @@ export const Route = createFileRoute('/_authenticated/_authAdmin/admin/collectio
 function AdminCollectionComponent() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -26,6 +28,9 @@ function AdminCollectionComponent() {
     createCollection(data)
       .then(data => {
         console.log("collection créée avec succès", data);
+        queryClient.resetQueries({ 
+          queryKey: ['collections', 1, null]
+        });
         navigate({ to: "/", search: { page: 1, search: null } });
       })
       .catch((error) => {
