@@ -53,6 +53,7 @@ services:
         condition: service_healthy
     volumes:
       - ${HOST_STORAGE_PATH:-./knowledge_base}:/app/knowledge_base
+      - temp_files:/app/temp
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -73,6 +74,7 @@ services:
         condition: service_healthy
     volumes:
       - ${HOST_STORAGE_PATH:-./knowledge_base}:/app/knowledge_base
+      - temp_files:/app/temp
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:
@@ -83,3 +85,4 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  temp_files:

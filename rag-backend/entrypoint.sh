@@ -11,7 +11,7 @@ print_status() {
 cd /app
 
 # Création répertoire temporaire pour les fichiers téléchargés
-mkdir -p /app/temp
+# mkdir -p /app/temp
 
 print_status "Mise à jour de la base de données..."
 APP_ENV=production python scripts/setup_db.py

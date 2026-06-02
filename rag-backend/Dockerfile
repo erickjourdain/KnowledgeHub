@@ -54,6 +54,8 @@ COPY rag-backend/pyrightconfig.json .
 COPY rag-backend/.env .env
 COPY rag-backend/worker.py .
 COPY rag-backend/entrypoint.sh .
+# Create temp directory for both backend and worker containers
+RUN mkdir -p /app/temp
 
 # Récupération du build React de l'étape 1 vers le dossier statique de FastAPI
 COPY --from=frontend-builder /frontend/dist ./app/static
