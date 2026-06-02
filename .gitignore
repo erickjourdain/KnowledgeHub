@@ -54,8 +54,6 @@ alembic/versions/*.py
 temp/
 
 # Directory tracking
-# Track prompts/ and all its contents
-prompts/
 # Track knowledge_base/ directory but ignore its contents
 knowledge_base/*
 !knowledge_base/
