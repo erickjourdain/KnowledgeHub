@@ -6,7 +6,7 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import lazyload, raiseload, Session
 
 from app.schemas import CollectionCreate, CollectionListResponse, CollectionResponse, CollectionUpdate
-from app.models import Collection, Document, RoleEnum, User, collection_users
+from app.models import Collection, Document, DocumentChunk, RoleEnum, User, collection_users
 from app.utils.directory import get_knowledge_base_dir
 
 
@@ -216,16 +216,28 @@ def update_collection(collection_id: int, collection_update: CollectionUpdate, d
 def delete_collection(collection_id: int, collection_uuid: str, db: Session) -> bool:
     """Supprimer une collection"""
     try:
+        # Récupérer les documents de la collection
+        documents = db.query(Document).filter(Document.collection_id == collection_id).all()
+
+        # Supprimer les chunks de tous les documents
+        for document in documents:
+            db.query(DocumentChunk).where(DocumentChunk.document_id == document.id).delete()
+
+        # Supprimer tous les documents
+        db.query(Document).filter(Document.collection_id == collection_id).delete()
+
+        # Supprimer la collection
         db.query(Collection).where(Collection.id == collection_id).delete()
 
-        # Supprimer le répertoire de la collection
+        # Commiter la transaction DB avant suppression du répertoire
+        db.commit()
+
+        # Supprimer le répertoire de la collection (après le commit pour atomicité)
         collection_dir = os.path.join(get_knowledge_base_dir(), f"{collection_uuid}")
         try:
             shutil.rmtree(collection_dir)
         except FileNotFoundError:
-            pass  # Le répertoire n'existe pas, rien à faire
-
-        db.commit()
+            pass  # Le répertoire n'existe pas, ce n'est pas critique
 
         return True
     except Exception as e:

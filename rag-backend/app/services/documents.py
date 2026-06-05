@@ -54,17 +54,28 @@ def delete_document(document_id: int, collection_uuid: str, db: Session) -> bool
         if not document:
             raise HTTPException(status_code=404, detail="Le document n'existe pas")
 
-        db.query(Document).where(Document.id == document_id).delete()
+        # Sauvegarder le titre pour la suppression du fichier après le commit
+        document_title = document.title
 
-        # Supprimer le fichier du système de fichiers
-        file_path = os.path.join(get_knowledge_base_dir(), f"{collection_uuid}", str(document.name))
+        # Supprimer d'abord les chunks (pour respecter la contrainte de clé étrangère)
+        db.query(DocumentChunk).where(DocumentChunk.document_id == document_id).delete()
+
+        # Supprimer le document
+        db.delete(document)
+
+        # Commiter la transaction DB avant suppression du fichier
+        db.commit()
+
+        # Supprimer le fichier du système de fichiers (après le commit pour atomicité)
+        file_path = os.path.join(get_knowledge_base_dir(), f"{collection_uuid}", document_title)
         try:
             os.remove(file_path)
-        except FileNotFoundError as e:
-            raise e  # Le fichier n'existe pas, rien à faire    
+        except FileNotFoundError:
+            pass  # Le fichier n'existe pas, ce n'est pas critique
 
-        db.commit()
         return True
+    except HTTPException:
+        raise
     except Exception as e:
         db.rollback()
         print(f"Error in delete_document: {e}")
