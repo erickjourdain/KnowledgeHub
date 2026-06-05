@@ -197,14 +197,18 @@ def del_conversation_by_uuid(
     try:
         conversation = db.query(Conversation).options(raiseload("*")) \
             .filter(Conversation.uuid == conversation_uuid).first()
-        
+
         print(f"Conversation to delete: {conversation.uuid if conversation else 'Not found'}")
         if not conversation:
             raise NoResultFound("Conversation non trouvée")
-        
+
         if conversation.creator_id != user.id:
             raise PermissionError("Vous ne disposez pas des droits pour accéder à cette conversation")
-        
+
+        # Supprimer les messages (nécessaire pour éviter les erreurs de clé étrangère)
+        db.query(Message).filter(Message.conversation_id == conversation.id).delete()
+
+        # Supprimer la conversation
         db.delete(conversation)
         db.commit()
 

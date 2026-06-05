@@ -6,7 +6,7 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import lazyload, raiseload, Session
 
 from app.schemas import CollectionCreate, CollectionListResponse, CollectionResponse, CollectionUpdate
-from app.models import Collection, Document, DocumentChunk, RoleEnum, User, collection_users
+from app.models import Collection, Document, DocumentChunk, RoleEnum, User, collection_users, JobIngestion, JobQueryKb, Conversation, Message
 from app.utils.directory import get_knowledge_base_dir
 
 
@@ -216,6 +216,18 @@ def update_collection(collection_id: int, collection_update: CollectionUpdate, d
 def delete_collection(collection_id: int, collection_uuid: str, db: Session) -> bool:
     """Supprimer une collection"""
     try:
+        # Supprimer les associations d'utilisateurs autorisés dans la table de jointure
+        # (nécessaire pour éviter les erreurs de clé étrangère)
+        db.execute(collection_users.delete().where(collection_users.c.collection_id == collection_id))
+
+        # Supprimer les jobs liés à la collection
+        db.query(JobIngestion).filter(JobIngestion.collection_id == collection_id).delete()
+        db.query(JobQueryKb).filter(JobQueryKb.collection_id == collection_id).delete()
+
+        # Supprimer les conversations et leurs messages
+        # (supprime d'abord les messages via cascade, puis les conversations)
+        db.query(Conversation).filter(Conversation.collection_id == collection_id).delete()
+
         # Récupérer les documents de la collection
         documents = db.query(Document).filter(Document.collection_id == collection_id).all()
 
