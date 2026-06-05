@@ -224,8 +224,12 @@ def delete_collection(collection_id: int, collection_uuid: str, db: Session) -> 
         db.query(JobIngestion).filter(JobIngestion.collection_id == collection_id).delete()
         db.query(JobQueryKb).filter(JobQueryKb.collection_id == collection_id).delete()
 
-        # Supprimer les conversations et leurs messages
-        # (supprime d'abord les messages via cascade, puis les conversations)
+        # Supprimer d'abord les messages des conversations (pour éviter les FK constraints)
+        conversation_ids = db.query(Conversation.id).filter(Conversation.collection_id == collection_id).all()
+        for conv_id in conversation_ids:
+            db.query(Message).filter(Message.conversation_id == conv_id.id).delete()
+
+        # Supprimer les conversations
         db.query(Conversation).filter(Conversation.collection_id == collection_id).delete()
 
         # Récupérer les documents de la collection
