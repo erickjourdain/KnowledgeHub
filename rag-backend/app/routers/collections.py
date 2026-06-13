@@ -1,5 +1,5 @@
 import os
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from rq.job import JobStatus
@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from app.core.queue import ingestion_queue
 from app.config.database import get_db
 from app.jobs.ingestion import ingestion_job
-from app.models import User, RoleEnum
+from app.models import User, RoleEnum, Document
 from app.schemas import (
     CollectionCreate,
     CollectionResponse, 
@@ -373,3 +373,89 @@ def upload_document_to_collection(
     except Exception as e:
         print(f"Error in upload: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de l'upload du fichier")
+
+
+@router.post("/{collection_id}/reindex", response_model=List[JobResponse])
+def reindex_collection_or_document(
+    collection_id: int,
+    document_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Réindexe un document spécifique ou tous les documents d'une collection.
+    """
+    try:
+        # 1. Vérification des droits
+        collection = get_collection_without_relations(collection_id, current_user, db)
+        if current_user.role != RoleEnum.ADMIN and \
+            collection is not None and \
+            not check_is_gestionnaire(collection, current_user):
+            raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+        
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection non trouvée")
+
+        # 2. Identification des documents à réindexer
+        if document_id is not None:
+            document = db.query(Document).filter(
+                Document.id == document_id, 
+                Document.collection_id == collection_id
+            ).first()
+            if not document:
+                raise HTTPException(status_code=404, detail="Document non trouvé")
+            documents = [document]
+        else:
+            # Réindexer tous les documents déjà indexés de la collection
+            documents = db.query(Document).filter(
+                Document.collection_id == collection_id,
+                Document.is_indexed == True
+            ).all()
+
+        if not documents:
+            return []
+
+        knowledge_base_dir = get_knowledge_base_dir()
+        temp_dir = get_temp_dir()
+        jobs = []
+
+        # 3. Enqueue des jobs de réindexation
+        for doc in documents:
+            doc_title = cast(str, doc.title)
+            doc_id_val = cast(int, doc.id)
+            # Vérification de l'existence physique du fichier
+            file_path = knowledge_base_dir / collection.uuid / doc_title
+            if not file_path.exists():
+                if document_id is not None:
+                    # Si c'était un document précis, on lève une erreur
+                    raise HTTPException(
+                        status_code=404, 
+                        detail=f"Fichier physique non trouvé pour le document {doc_title}"
+                    )
+                else:
+                    # Si c'est toute la collection, on ignore ce fichier et on continue
+                    print(f"Avertissement : Fichier physique non trouvé pour le document {doc_title}, ignoré.")
+                    continue
+
+            # Lancement du job d'ingestion RQ
+            job = ingestion_queue.enqueue(
+                ingestion_job,
+                filename=doc_title,
+                collection_id=collection_id,
+                temp_dir=temp_dir,
+                knowledge_base_dir=knowledge_base_dir,
+                document_id=doc_id_val
+            )
+            
+            jobs.append(JobResponse(
+                status=JobStatus.QUEUED,
+                job_id=job.id
+            ))
+
+        return jobs
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in reindex: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la réindexation")

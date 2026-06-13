@@ -1,3 +1,6 @@
+from collections import defaultdict
+import heapq
+from typing import cast, Any
 import json
 from pathlib import Path
 
@@ -26,7 +29,7 @@ def load_prompt(filename: str) -> str:
 def search_chunks(
     collection: Collection,
     query_embedding: list[float],
-    reformulated_query: str,
+    bm25_query: str,
     top_k: int,
     db: Session,
 ) -> list[DocumentChunk]:
@@ -44,7 +47,7 @@ def search_chunks(
     # 2. Recherche BM25 (via ts_rank de PostgreSQL)
     # Utilisation d'une expression SQL brute pour la concaténation des tsvectors
     tsvector_expr = text("""
-        setweight(to_tsvector('french', document_chunks.chunk_text), 'A') ||
+        setweight(document_chunks.chunk_text_search, 'A') ||
         setweight(to_tsvector('french', document_chunks.chapter), 'B') ||
         setweight(to_tsvector('french', documents.title), 'B')
     """)
@@ -55,7 +58,7 @@ def search_chunks(
             DocumentChunk,
             func.ts_rank_cd(
                 tsvector_expr,
-                func.plainto_tsquery('french', reformulated_query)
+                func.plainto_tsquery('french', bm25_query)
             ).label('bm25_score')
         )
         .join(Document, DocumentChunk.document_id == Document.id)
@@ -63,7 +66,7 @@ def search_chunks(
         .order_by(
             func.ts_rank_cd(
                 tsvector_expr,
-                func.plainto_tsquery('french', reformulated_query)
+                func.plainto_tsquery('french', bm25_query)
             ).desc()
         )
         .limit(top_k * 2)
@@ -72,30 +75,29 @@ def search_chunks(
     bm25_chunks = [row[0] for row in bm25_result]
 
     # 3. Fusion RRF (Reciprocal Rank Fusion)
-    # Combine les classements avec un score basé sur le rang
-    rrf_k = 60  # Paramètre de fusion RRF
-
-    chunk_scores: dict[int, float] = {}
-    chunk_data: dict[int, DocumentChunk] = {}
+    # Combine les classements avec un score basé sur le rang (vectoriel pondéré à 1.0, BM25 pondéré à 0.8)
+    rrf_k = 60
+    w_vector = 1.0
+    w_bm25 = 0.8
+    chunk_scores = defaultdict(float)
+    chunk_data = {}
 
     # Ajouter les scores de la recherche vectorielle
     for rank, chunk in enumerate(vector_chunks):
-        chunk_id = chunk.id
-        score = 1.0 / (rrf_k + rank + 1)
-        chunk_scores[chunk_id] = chunk_scores.get(chunk_id, 0) + score
+        chunk_id = cast(int, chunk.id)
+        chunk_scores[chunk_id] += w_vector / (rrf_k + rank + 1)
         chunk_data[chunk_id] = chunk
 
     # Ajouter les scores BM25
     for rank, chunk in enumerate(bm25_chunks):
-        score = 1.0 / (rrf_k + rank + 1)
-        chunk_id = chunk.id
-        chunk_scores[chunk_id] = chunk_scores.get(chunk_id, 0) + score
+        chunk_id = cast(int, chunk.id)
+        chunk_scores[chunk_id] += w_bm25 / (rrf_k + rank + 1)
         if chunk_id not in chunk_data:
             chunk_data[chunk_id] = chunk
 
-    # Trier par score combiné et récupérer les top_k
-    sorted_chunk_ids = sorted(chunk_scores.keys(), key=lambda x: chunk_scores[x], reverse=True)[:top_k]
-    return [chunk_data[chunk_id] for chunk_id in sorted_chunk_ids]
+    # Récupérer les top_k meilleurs chunks de manière optimisée
+    top_chunk_ids = heapq.nlargest(top_k, chunk_scores.keys(), key=lambda x: chunk_scores[x])
+    return [chunk_data[cid] for cid in top_chunk_ids]
 
 
 def create_context_block(sources: list[dict]) -> str:
@@ -125,87 +127,54 @@ def create_context_block(sources: list[dict]) -> str:
     return "\n\n".join(context_blocks)
 
 
+_reranker_model = None
+
+def get_reranker():
+    global _reranker_model
+    if _reranker_model is None:
+        import torch
+        from sentence_transformers import CrossEncoder
+        device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
+        print(f"Chargement du Reranker BGE sur le périphérique : {device}...")
+        _reranker_model = CrossEncoder("BAAI/bge-reranker-v2-m3", device=device)
+    return _reranker_model
+
+
 def rerank_chunks_batch(
     chunks: list[DocumentChunk],
     query: str,
     model: str
 ) -> list[DocumentChunk]:
     """
-    Analyse l'intégralité des chunks en un seul appel Ollama (Batch Reranking)
-    pour optimiser les performances et réduire la latence.
+    Reranke un lot de chunks localement en utilisant le modèle Cross-Encoder BAAI/bge-reranker-v2-m3.
     """
     if not chunks:
         return []
 
-    # 1. Préparation de la liste des chunks à envoyer dans le prompt
-    chunks_input = []
-    for chunk in chunks:
-        chunk_text = str(chunk.chunk_text or "")
-        chunks_input.append({
-            "id": chunk.id,
-            "texte": chunk_text[:300] + "..." if len(chunk_text) > 300 else chunk_text
-        })
-
-    # 2. Configuration du Prompt Système pour l'analyse par lot
-    rerank_prompt = load_prompt("rerank_prompt.txt")
-
-    # 3. Construction du prompt utilisateur contenant tout le lot
-    prompt_evaluation = f"""
-    QUESTION DE L'UTILISATEUR :
-    "{query}"
-
-    LISTE DES CHUNKS À ÉVALUER :
-    {json.dumps(chunks_input, ensure_ascii=False, indent=2)}
-    """
-
     try:
-        # 4. Appel unique à Ollama avec formatage JSON strict
-        print(f"Envoi d'un lot de {len(chunks)} chunks à Ollama pour Reranking...")
-        response = ollama_client.generate(
-            model=model,
-            prompt=prompt_evaluation,
-            system=rerank_prompt,
-            options={"temperature": 0.0},  # Température à 0 pour un maximum de rigueur
-            format={
-                "type": "object",
-                "properties": {
-                    "evaluations": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "chunk_id": {"type": "integer"},
-                                "est_pertinent": {"type": "boolean"}
-                            },
-                            "required": ["chunk_id", "est_pertinent"]
-                        }
-                    }
-                },
-                "required": ["evaluations"]
-            }
-        )
-
-        # 5. Traitement des résultats
-        result_json = json.loads(response["response"])
-        evaluations = result_json.get("evaluations", [])
+        model_encoder = get_reranker()
         
-        # Transformation des résultats en dictionnaire pour un accès rapide {id: bool}
-        pertinence_map = {eval_item["chunk_id"]: eval_item["est_pertinent"] for eval_item in evaluations}
+        # Préparation des paires (requête, texte du chunk)
+        pairs = [(query, str(chunk.chunk_text or "")) for chunk in chunks]
         
-        # Reconstruction de la liste finale des chunks validés par le modèle
-        relevant_chunks = []
-        for chunk in chunks:
-            # Si le modèle l'a validé (ou s'il a oublié un ID par erreur, on garde par sécurité)
-            if pertinence_map.get(chunk.id, True) is True:
-                relevant_chunks.append(chunk)
-                #print(f"-> [CONSERVÉ] Chunk {chunk.id}")
-            #else:
-                #print(f"-> [ÉLIMINÉ] Chunk {chunk.id}")
-
+        # Calcul des scores de pertinence
+        scores = model_encoder.predict(cast(Any, pairs))
+        
+        # Associer les scores aux chunks et les trier par score décroissant
+        scored_chunks = sorted(zip(chunks, scores), key=lambda x: float(x[1]), reverse=True)
+        
+        # Filtrer avec un seuil de pertinence (seuil de -2.0 typique pour BGE Reranker v2)
+        relevant_chunks = [chunk for chunk, score in scored_chunks if float(score) > -2.0]
+        
+        # Si aucun chunk ne dépasse le seuil, on garde au moins le premier (le plus pertinent) pour éviter les contextes vides
+        if not relevant_chunks and scored_chunks:
+            relevant_chunks = [scored_chunks[0][0]]
+            
+        print(f"Reranking local (BGE) terminé : {len(relevant_chunks)} chunks conservés sur {len(chunks)}.")
         return relevant_chunks
 
     except Exception as e:
-        print(f"Erreur lors du reranking par lot : {e}. Conservation de tous les chunks par sécurité.")
+        print(f"Erreur lors du reranking local : {e}. Conservation de tous les chunks par sécurité.")
         return chunks
 
 
@@ -242,15 +211,20 @@ def query_db_processing(
         QUESTION UTILISATEUR :
         {query}
         """
-        ollama_response = ollama_client.chat(
-            model=model, 
-            messages=[
-                {"role": "system", "content": reformulate_prompt},
-                {"role": "user", "content": prompt}
-            ],
+        ollama_response= ollama_client.generate(
+            model=model,
+            prompt=prompt,
+            system=reformulate_prompt,
+            format={
+                "type": "object",
+                "properties": {
+                    "bm25_query": {"type": "string"},
+                    "vector_query": {"type": "string"}
+                },
+                "required": ["bm25_query", "vector_query"]
+            }
         )
-        reformulated_query = ollama_response["message"]["content"]
-        print("Prompt reformulé")
+        ollama_response = json.loads(ollama_response["response"])
 
         # Générer l'embedding pour la requête reformulée
         publish_progress(
@@ -262,7 +236,7 @@ def query_db_processing(
             message="Embedding de la requête reformulée"
         )
         print("Génération de l'embedding pour la requête reformulée...")
-        embedding_response = ollama_client.embeddings(model=collection.modele, prompt=reformulated_query)
+        embedding_response = ollama_client.embeddings(model=str(collection.modele), prompt=ollama_response["vector_query"])
         query_embedding = embedding_response["embedding"]
 
         # Recherche hybride dans la base de connaissances: similarité cosinique + BM25        
@@ -278,7 +252,7 @@ def query_db_processing(
         chunks_initial = search_chunks(
             collection=collection,
             query_embedding=query_embedding,
-            reformulated_query=reformulated_query,
+            bm25_query=ollama_response["bm25_query"],
             top_k=top_k * 2, # Récupérer plus de chunks pour le reranking
             db=db
         )
@@ -388,6 +362,23 @@ def query_db_processing(
         # Cela convertit les caractères textuels "\\n" en véritables sauts de ligne Python
         if "reponse" in rag_result and isinstance(rag_result["reponse"], str):
             rag_result["reponse"] = rag_result["reponse"].replace("\\n", "\n")
+
+        # Dédoublonnement des sources générées par le LLM
+        if "sources" in rag_result and isinstance(rag_result["sources"], list):
+            seen_sources = set()
+            deduplicated_sources = []
+            for src in rag_result["sources"]:
+                if isinstance(src, dict):
+                    key = (
+                        str(src.get("fichier", "")).strip().lower(),
+                        str(src.get("chapitre", "")).strip().lower(),
+                        str(src.get("section", "")).strip().lower(),
+                        src.get("page")
+                    )
+                    if key not in seen_sources:
+                        seen_sources.add(key)
+                        deduplicated_sources.append(src)
+            rag_result["sources"] = deduplicated_sources
 
         if conversation_id is None:
             print("Génération du titre de la conversation")

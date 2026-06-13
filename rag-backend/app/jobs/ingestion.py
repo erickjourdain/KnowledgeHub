@@ -1,4 +1,6 @@
 from pathlib import Path
+from typing import Optional
+import shutil
 from sqlalchemy.orm import Session
 from rq import get_current_job
 
@@ -13,6 +15,7 @@ def ingestion_job(
     collection_id: int,
     temp_dir: Path,
     knowledge_base_dir: Path,
+    document_id: Optional[int] = None,
 ):
     """
     Job RQ exécuté par le worker
@@ -23,11 +26,20 @@ def ingestion_job(
     if job is None:
         raise RuntimeError("Aucun job RQ en cours d'exécution trouvé")
 
+    job_ingestion: Optional[JobIngestion] = None
     try:
         # Vérifier que la collection existe
         collection = db.query(Collection).get(collection_id)
         if not collection:
             raise ValueError(f"La collection {collection_id} n'existe pas")
+
+        # Si document_id est fourni, copier le fichier physique vers temp_dir
+        if document_id is not None:
+            source_file = Path(knowledge_base_dir) / f"{collection.uuid}" / filename
+            if not source_file.exists():
+                raise FileNotFoundError(f"Le fichier source {source_file} n'existe pas")
+            Path(temp_dir).mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source_file, Path(temp_dir) / filename)
 
         # Créer l'enregistrement JobIngestion au début
         job_ingestion = JobIngestion(
@@ -35,6 +47,7 @@ def ingestion_job(
             collection_id=collection_id,
             filename=filename,
             status="processing",
+            document_id=document_id,
         )
         db.add(job_ingestion)
         db.commit()
@@ -46,6 +59,7 @@ def ingestion_job(
             temp_dir=temp_dir,
             knowledge_base_dir=knowledge_base_dir,
             db=db,
+            document_id=document_id,
         )
 
         # Mettre à jour le job avec le résultat
@@ -55,7 +69,7 @@ def ingestion_job(
 
     except Exception as e:
         # Mettre à jour le job avec l'erreur
-        if 'job_ingestion' in locals():
+        if job_ingestion is not None:
             job_ingestion.status = job.get_status()
             job_ingestion.error = str(e)
             db.commit()

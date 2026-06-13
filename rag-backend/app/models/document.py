@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean, Index, Computed
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pgvector.sqlalchemy import VECTOR
 from app.config.database import Base
@@ -42,4 +43,25 @@ class DocumentChunk(Base):
     subsection = Column(String(512), nullable=True)
     page = Column(Integer, nullable=True)
 
+    # Text search vector generated column
+    chunk_text_search = Column(
+        TSVECTOR,
+        Computed("to_tsvector('french', chunk_text)", persisted=True),
+        nullable=True
+    )
+
     document = relationship("Document", back_populates="chunks")
+
+    __table_args__ = (
+        Index(
+            "ix_document_chunks_chunk_text_search",
+            "chunk_text_search",
+            postgresql_using="gin",
+        ),
+        Index(
+            "ix_document_chunks_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+    )

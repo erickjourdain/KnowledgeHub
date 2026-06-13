@@ -1,14 +1,14 @@
 import os
-import re
 import shutil
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, cast, Optional
+from datetime import datetime
 
 from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PaginatedPipelineOptions, PdfPipelineOptions, TableFormerMode, TableStructureOptions
 from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
-from markdown_it import MarkdownIt
+from docling.chunking import HierarchicalChunker
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 import tiktoken
@@ -39,8 +39,8 @@ def delete_temp_file(file_path: Path) -> None:
         file_path.unlink()
 
 
-def convert_to_markdown(file_path: Path) -> str:
-    """Convertit un fichier PDF ou DOCX en markdown via docling"""
+def convert_document(file_path: Path):
+    """Convertit un fichier PDF ou DOCX en document DoclingDocument structurel"""
     # Configuration des options de conversion PDF
     pdf_pipeline_options = PdfPipelineOptions()
     pdf_pipeline_options.do_ocr = False
@@ -71,135 +71,50 @@ def convert_to_markdown(file_path: Path) -> str:
         }
     )
     result = converter.convert(str(file_path))
-    markdown = result.document.export_to_markdown()
-
-    return markdown
+    return result.document
 
 
-def chunk_markdown_deterministic(
-    markdown: str,
-    document_id: int,
-    window_size_words: int = 400,
-    overlap_words: int = 60,
-    max_tokens_security: int = 900
+def chunk_document_hierarchical(
+    doc: Any,
+    document_id: int
 ) -> List[Dict[str, Any]]:
+    """Découpe un document DoclingDocument de manière hiérarchique en préservant la structure des tableaux"""
+    chunker = HierarchicalChunker()
+    doc_chunks = chunker.chunk(doc)
 
-    md = MarkdownIt()
-    tokens = md.parse(markdown)
-
-    hierarchy = []
-    current_page = None
-    buffer = []
     chunks = []
-
-    # ------------------------
-    # Création chunk
-    # ------------------------
-
-    def build_chunk(text: str):
-
-        contextual_text = (
-            " > ".join(hierarchy) + "\n\n" + text
-            if hierarchy else text
-        )
-
-        token_count = count_tokens(contextual_text)
-
-        # Sécurité tokens (rarement déclenché)
-        if token_count > max_tokens_security:
-            words = contextual_text.split()
-            contextual_text = " ".join(words[:window_size_words])
+    for chunk in doc_chunks:
+        # contextualize() serialise le chunk avec sa hierarchie de titres parents
+        content = chunker.contextualize(chunk)
+        
+        # Extraction de la hiérarchie des titres
+        meta: Any = chunk.meta
+        hierarchy = getattr(meta, "headings", [])
+        chapter = hierarchy[0] if len(hierarchy) > 0 else None
+        section = hierarchy[1] if len(hierarchy) > 1 else None
+        subsection = hierarchy[2] if len(hierarchy) > 2 else None
+        
+        # Extraction du numéro de page
+        page = None
+        doc_items = getattr(meta, "doc_items", [])
+        if doc_items:
+            first_item = doc_items[0]
+            if getattr(first_item, "prov", None):
+                page = first_item.prov[0].page_no
 
         chunks.append({
-            "content": contextual_text,
-            "token_count": count_tokens(contextual_text),
+            "content": content,
+            "token_count": count_tokens(content),
             "metadata": {
                 "document_id": document_id,
-                "chapter": hierarchy[0] if len(hierarchy) > 0 else None,
-                "section": hierarchy[1] if len(hierarchy) > 1 else None,
-                "subsection": hierarchy[2] if len(hierarchy) > 2 else None,
-                "page": current_page,
+                "chapter": chapter,
+                "section": section,
+                "subsection": subsection,
+                "page": page,
                 "hierarchy": list(hierarchy)
             }
         })
-
-    # ------------------------
-    # Sliding Window DÉTERMINISTE
-    # ------------------------
-
-    def create_chunks_from_text(text: str):
-
-        words = text.split()
-        total_words = len(words)
-
-        if total_words == 0:
-            return
-
-        step = window_size_words - overlap_words
-
-        # GARANTIE MATHÉMATIQUE
-        if step <= 0:
-            raise ValueError("overlap_words must be < window_size_words")
-
-        start = 0
-
-        while start < total_words:
-            end = min(start + window_size_words, total_words)
-            slice_words = words[start:end]
-            slice_text = " ".join(slice_words)
-
-            build_chunk(slice_text)
-
-            start += step
-
-    # ------------------------
-    # Flush buffer
-    # ------------------------
-
-    def flush_buffer():
-        nonlocal buffer
-
-        if not buffer:
-            return
-
-        full_text = "\n\n".join(buffer).strip()
-        create_chunks_from_text(full_text)
-        buffer = []
-
-    # ------------------------
-    # Parsing Markdown AST
-    # ------------------------
-
-    for i, token in enumerate(tokens):
-
-        if token.type == "heading_open":
-            flush_buffer()
-
-            level = int(token.tag[1])
-            heading_text = tokens[i + 1].content.strip()
-
-            hierarchy = hierarchy[:level - 1]
-            if len(hierarchy) < level:
-                hierarchy.append(heading_text)
-            else:
-                hierarchy[level - 1] = heading_text
-
-        elif token.type == "inline":
-            text = token.content.strip()
-
-            if re.match(r"^Page\s+\d+", text, re.IGNORECASE):
-                match = re.search(r"\d+", text)
-                if match:
-                    current_page = int(match.group())
-            elif text:
-                buffer.append(text)
-
-    flush_buffer()
-
-    # GARANTIE : au moins 1 chunk
-    if not chunks:
-        build_chunk(markdown.strip())
-
+        
     return chunks
 
 
@@ -231,7 +146,8 @@ def process_document(
     collection: Collection,
     temp_dir: Path,
     knowledge_base_dir: Path,
-    db: Session
+    db: Session,
+    document_id: Optional[int] = None
 ) -> int:
     """
     Traite un document : conversion, chunking, embeddings
@@ -265,7 +181,7 @@ def process_document(
 
         # Démarrage du traitement de conversion du document
         print(f"Début du traitement du document {file_name} (ID collection: {collection.id})")
-        markdown_content = convert_to_markdown(temp_file_path)
+        doc_structure = convert_document(temp_file_path)
         publish_progress(
             job.id, 
             type="ingestion",
@@ -275,16 +191,11 @@ def process_document(
             message="Découpage (chunking)"
         )
        
-        # Chunking du contenu markdown de manière déterministe avec contexte hiérarchique
-        window_size_words = 400
-        overlap_words = 60
-        print(f"Chunking du document {file_name} avec une fenêtre de {window_size_words} mots et un chevauchement de {overlap_words} mots...")
-        chunks = chunk_markdown_deterministic(
-            markdown_content,
-            document_id=int(str(collection.id)),
-            window_size_words=window_size_words,
-            overlap_words=overlap_words,
-            max_tokens_security=800
+        # Chunking du contenu de manière hiérarchique avec Docling
+        print(f"Chunking du document {file_name} avec le chunker hiérarchique de Docling...")
+        chunks = chunk_document_hierarchical(
+            doc_structure,
+            document_id=int(str(collection.id))
         )
         publish_progress(
             job.id, 
@@ -331,12 +242,21 @@ def process_document(
         try:
             # Enregistrement dans la base de données avec gestion de la transactionnelle
             print("Enregistrement des métadonnées du document et des chunks dans la base de données...")
-            document = Document(
-                title=file_name,
-                collection_id=collection.id,
-                is_indexed=True
-            )
-            db.add(document)
+            if document_id is not None:
+                document = db.query(Document).filter(Document.id == document_id).first()
+                if not document:
+                    raise ValueError(f"Document {document_id} non trouvé")
+                # Supprimer les chunks existants
+                db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).delete()
+                document.is_indexed = True
+                document.updated_at = datetime.now()
+            else:
+                document = Document(
+                    title=file_name,
+                    collection_id=collection.id,
+                    is_indexed=True
+                )
+                db.add(document)
             db.flush()  # Flush pour obtenir l'ID sans commiter
 
             # Enregistrement des chunks avec les embeddings dans la base de données
@@ -366,7 +286,7 @@ def process_document(
 
             # Retour de l'ID du document pour référence future
             print(f"Traitement du document {file_name} terminé avec succès. Document ID: {document.id}")
-            return document.id
+            return cast(int, document.id)
         
         except Exception as db_error:
             db.rollback()  # Rollback si une erreur survient

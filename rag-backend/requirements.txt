@@ -18,3 +18,4 @@ markdown-it-py
 tiktoken
 redis
 rq
+sentence-transformers
