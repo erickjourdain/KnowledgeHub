@@ -10,8 +10,14 @@ import { tokenAtomStorage } from "@store/authStore";
 import {
   jobIngestionIdsAtom,
   jobIngestionUpdatedAtom,
-  updateJobIngestionAtom
+  updateJobIngestionAtom,
 } from "@store/jobIngestionStore";
+import {
+  jobReindexIdsAtom,
+  jobReindexUpdatedAtom,
+  updateJobReindexAtom,
+} from "@store/jobReindexStore";
+
 import { jobQueryAtom } from "@store/jobQueryStore";
 import type { JobDocument, JobInfoStatut } from "@appTypes/Job";
 
@@ -30,10 +36,20 @@ export function WebSocketProvider({
   const subscribedJobsRef = useRef<Set<string>>(new Set());
 
   const [jobIngestionIds, setJobIngestionIds] = useAtom(jobIngestionIdsAtom);
+  const [jobReindexIds, setJobReindexIds] = useAtom(jobReindexIdsAtom);
   const [jobQuery, setJobQuery] = useAtom(jobQueryAtom);
   const updateJobIngestion = useSetAtom(updateJobIngestionAtom);
+  const updateJobReindex = useSetAtom(updateJobReindexAtom);
   const setJobIngestionUpdated = useSetAtom(jobIngestionUpdatedAtom);
+  const setJobReindexUpdated = useSetAtom(jobReindexUpdatedAtom);
   const token = useAtomValue(tokenAtomStorage);
+
+  // Refs to always have the latest IDs inside the ws.onmessage closure
+  const jobIngestionIdsRef = useRef<string[]>(jobIngestionIds);
+  const jobReindexIdsRef = useRef<string[]>(jobReindexIds);
+  // Sync refs when atom values change
+  useEffect(() => { jobIngestionIdsRef.current = jobIngestionIds; }, [jobIngestionIds]);
+  useEffect(() => { jobReindexIdsRef.current = jobReindexIds; }, [jobReindexIds]);
 
   const [retryCount, setRetryCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
@@ -65,6 +81,12 @@ export function WebSocketProvider({
         ws.send(JSON.stringify({ action: "subscribe", job_id: jobIngestionId }));
         subscribedJobsRef.current.add(jobIngestionId);
       });
+      // Reindex jobs subscription
+      jobReindexIds.forEach((jobReindexId) => {
+        console.log(`souscription au job (reindex): ${jobReindexId}`);
+        ws.send(JSON.stringify({ action: "subscribe", job_id: jobReindexId }));
+        subscribedJobsRef.current.add(jobReindexId);
+      });
       if (jobQuery) {
         console.log(`souscription jobQuery: ${jobQuery.job_id}`);
         ws.send(JSON.stringify({ action: "subscribe", job_id: jobQuery.job_id }));
@@ -74,17 +96,22 @@ export function WebSocketProvider({
 
     ws.onmessage = async (event) => {
       const data: JobDocument | JobInfoStatut = JSON.parse(event.data);
-      console.log(`message du job: ${data.job_id}`)
-      if (data.type === 'ingestion') {
+      console.log(`message du job: ${data.job_id}`);
+      // Use refs to access the latest job ID lists
+      if (jobIngestionIdsRef.current.includes(data.job_id)) {
         if (data.progress === 100) {
-          // Job terminé, on supprime le job de la liste des jobs suivis
           setJobIngestionIds((prev) => prev.filter((id) => id !== data.job_id));
-          // On informe de la mise à jour d'un job
           setJobIngestionUpdated(true);
         }
         updateJobIngestion(data);
-      }
-      if (data.type === 'query') {
+      } else if (jobReindexIdsRef.current.includes(data.job_id)) {
+        if (data.progress === 100) {
+          setJobReindexIds((prev) => prev.filter((id) => id !== data.job_id));
+          setJobReindexUpdated(true);
+        }
+        updateJobReindex(data);
+        console.log('Updated reindex store for job', data.job_id, data);
+      } else if (data.type === 'query') {
         setJobQuery(data);
       }
     }
@@ -123,6 +150,12 @@ export function WebSocketProvider({
         currentSubs.add(jobIngestionId);
       }
     });
+    jobReindexIds.forEach((jobReindexId) => {
+      if (!currentSubs.has(jobReindexId)) {
+        ws.send(JSON.stringify({ action: "subscribe", job_id: jobReindexId }));
+        currentSubs.add(jobReindexId);
+      }
+    });
     if (jobQuery) {
       if (!currentSubs.has(jobQuery.job_id)) {
         ws.send(JSON.stringify({ action: "subscribe", job_id: jobQuery.job_id }));
@@ -132,13 +165,15 @@ export function WebSocketProvider({
 
     // Jobs supprimés
     currentSubs.forEach((jobId) => {
-      if (!jobIngestionIds.includes(jobId) &&
-        (jobQuery === null || jobQuery.job_id !== jobId)) {
+      const isIngestion = jobIngestionIds.includes(jobId);
+      const isReindex = jobReindexIds.includes(jobId);
+      const isQuery = jobQuery && jobQuery.job_id === jobId;
+      if (!isIngestion && !isReindex && !isQuery) {
         ws.send(JSON.stringify({ action: "unsubscribe", job_id: jobId }));
         currentSubs.delete(jobId);
       }
     });
-  }, [jobIngestionIds, jobQuery, isConnected]);
+  }, [jobIngestionIds, jobReindexIds, jobQuery, isConnected]);
 
   return (
     <WSContext.Provider value={{ socket: socketRef.current }}>

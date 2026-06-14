@@ -24,6 +24,7 @@ export const jobReindexAtomFamily = atomFamily((jobId: string) =>
 export const updateJobReindexAtom = atom(
   null,
   (_get, set, payload: JobDocument) => {
+    console.log('updateJobReindexAtom called', payload);
     const jobAtom = jobReindexAtomFamily(payload.job_id);
     set(jobAtom, (prev) => ({
       ...prev,
