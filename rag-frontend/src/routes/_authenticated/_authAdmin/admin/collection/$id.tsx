@@ -12,7 +12,8 @@ import {
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
-import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
+import AutorenewIcon from '@mui/icons-material/Autorenew';
+import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ErrorAccess from '@components/ErrorAccess';
@@ -24,7 +25,7 @@ export const Route = createFileRoute(
 )({
   loader: async ({ params: { id }, context: { auth, queryClient } }) => {
     const collection = await queryClient.ensureQueryData({
-      queryKey: ['collections' , String(id)],
+      queryKey: ['collections', String(id)],
       queryFn: () => fetchCollection(id)
     })
     if (isAdmin(auth.user) || isCreator(auth.user, collection.creator_id))
@@ -64,8 +65,14 @@ const ITEMS: Item[] = [
   {
     key: 'update',
     label: 'Mettre à jour',
-    icon: <ChangeCircleIcon />,
+    icon: <SettingsIcon />,
     path: 'update'
+  },
+  {
+    key: 'reindex',
+    label: 'Réindexer',
+    icon: <AutorenewIcon />,
+    path: 'reindex'
   },
   {
     key: 'delete',
@@ -94,7 +101,7 @@ function RouteComponent() {
           <List>
             {ITEMS.map((item) => (
               <ListItem key={item.key}>
-                <ListItemButton onClick={() => handleClick(item) }>
+                <ListItemButton onClick={() => handleClick(item)}>
                   <ListItemIcon>
                     {item.icon}
                   </ListItemIcon>

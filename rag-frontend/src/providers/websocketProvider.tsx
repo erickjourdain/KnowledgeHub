@@ -31,7 +31,7 @@ export function WebSocketProvider({
 
   const [jobIngestionIds, setJobIngestionIds] = useAtom(jobIngestionIdsAtom);
   const [jobQuery, setJobQuery] = useAtom(jobQueryAtom);
-  const updateJobIngestion  = useSetAtom(updateJobIngestionAtom);
+  const updateJobIngestion = useSetAtom(updateJobIngestionAtom);
   const setJobIngestionUpdated = useSetAtom(jobIngestionUpdatedAtom);
   const token = useAtomValue(tokenAtomStorage);
 
@@ -45,11 +45,7 @@ export function WebSocketProvider({
       return;
     }
 
-    // Vérifier si VITE_API_URL est relatif (ex: /api) ou absolu (ex: //localhost:8000/api)
-    const envApiUrl = import.meta.env.VITE_API_URL;
-    const isRelative = envApiUrl && envApiUrl.startsWith('/') && !envApiUrl.startsWith('//');
-    const apiUrl = isRelative ? `//${window.location.host}${envApiUrl}` : (envApiUrl || `//${window.location.host}/api`);
-    const wsUrl = `ws:${apiUrl.replace('/api', '')}/ws/jobs?token=${token}`;
+    const wsUrl = `ws:${import.meta.env.VITE_API_URL?.replace('/api', '')}/ws/jobs?token=${token}`;
     console.log("WebSocket: attempting to connect to", wsUrl);
 
     const ws = new WebSocket(wsUrl);

@@ -1,23 +1,27 @@
 import { useCallback, useState } from 'react';
-import { 
-  createFileRoute, 
-  useLoaderData, 
-  useNavigate, 
-  useRouter 
+import {
+  createFileRoute,
+  useLoaderData,
+  useNavigate,
+  useRouter
 } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
-import { 
+import {
   Box,
   Dialog,
   DialogContent,
   DialogTitle,
-  Divider, 
-  Grid, 
+  Divider,
+  Grid,
   IconButton,
-  Typography 
+  Paper,
+  Typography
 } from '@mui/material';
 import DeleteIcon from "@mui/icons-material/Delete";
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { DataGrid, type GridColDef, type GridPaginationModel, type GridRenderCellParams } from '@mui/x-data-grid';
 import ConfirmationDialog from '@components/ConfirmationDialog';
 import ConfirmationMessage from '@components/ConfirmationMessage';
@@ -39,9 +43,9 @@ export const Route = createFileRoute(
     }
   },
   loaderDeps: ({ search: { page, pageSize } }) => ({ page, pageSize }),
-  loader: async ({params, deps: {page, pageSize}, context: {queryClient}}) => {
+  loader: async ({ params, deps: { page, pageSize }, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
-      queryKey: ['collections', params.id, 'documents', page, pageSize ],
+      queryKey: ['collections', params.id, 'documents', page, pageSize],
       queryFn: () => fetchCollectionDocument(params.id, page, pageSize)
     });
   },
@@ -54,11 +58,12 @@ function RouteComponent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: Route.fullPath });
-  const collection = useLoaderData({ 
+  const collection = useLoaderData({
     from: '/_authenticated/_authAdmin/admin/collection/$id'
   });
-  const { data, count } = useLoaderData({ 
-    from: '/_authenticated/_authAdmin/admin/collection/$id/documents'}
+  const { data, count } = useLoaderData({
+    from: '/_authenticated/_authAdmin/admin/collection/$id/documents'
+  }
   );
   const [paginationModel, setPaginationModel] = useState({
     page: 1,
@@ -80,7 +85,7 @@ function RouteComponent() {
             setMessage("Document supprimé avec succès");
             setColor("success");
             setOpenSnackbar(true);
-            queryClient.resetQueries({ 
+            queryClient.resetQueries({
               queryKey: ['collections', String(collection.id), 'documents', paginationModel.page, paginationModel.pageSize]
             });
             router.invalidate();
@@ -105,20 +110,20 @@ function RouteComponent() {
 
   const columns: GridColDef[] = [
     { field: 'title', headerName: 'Fichier', flex: 0.5 },
-    { 
-      field: 'created_at', 
-      headerName: 'Date insertion', 
+    {
+      field: 'created_at',
+      headerName: 'Date insertion',
       valueGetter: (val) => dayjs(val).format('DD/MM/YYYY à HH:mm'),
-      flex: 0.3 
+      flex: 0.3
     },
-    { 
-      field: 'id', 
+    {
+      field: 'id',
       headerName: 'Supprimer',
       align: 'center',
       renderCell: (params: GridRenderCellParams<any, number>) => (
-        <IconButton 
-          aria-label="delete" 
-          color="warning" 
+        <IconButton
+          aria-label="delete"
+          color="warning"
           onClick={() => {
             setDocumentToDelete(data.find(d => d.id === params.value) || null);
             setOpenDialog(true);
@@ -131,28 +136,65 @@ function RouteComponent() {
     }
   ]
 
-  if (data.length === 0) return (
-    <Typography variant="caption">
-      Aucun document indexé
-    </Typography>
-  )
-
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6'>
-        Documents indexés
+      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
+        <UploadFileIcon color="primary" />Documents indexés
       </Typography>
       <Divider sx={{ mb: 2 }} />
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 2,
+          backgroundColor: 'action.hover',
+          borderColor: 'info.main',
+          display: 'flex',
+          gap: 2
+        }}
+      >
+        <InfoOutlinedIcon color="info" sx={{ fontSize: 28 }} />
+        <Box>
+          <Typography variant='subtitle1' fontWeight='bold' mb={0.5}>
+            Liste des documents
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Voici la liste des documents indexés dans la collection. Cliquer sur l'icône de suppression pour supprimer un document. La suppression est définitive.
+          </Typography>
+        </Box>
+      </Paper>
       <Box display='flex' flexDirection='column'>
-        <DataGrid
-          columns={columns}
-          rows={data}
-          rowCount={count}
-          paginationModel={paginationModel}
-          paginationMode='server'
-          pageSizeOptions={PAGE_SIZE_OPTIONS}
-          onPaginationModelChange={handlePaginationChange}
-        />
+        {data.length === 0 && (
+          <Paper
+            variant='outlined'
+            sx={{
+              p: 3,
+              mb: 3,
+              borderRadius: 2,
+              backgroundColor: 'action.hover',
+              borderColor: 'warning.main',
+              display: 'flex',
+              gap: 2
+            }}
+          >
+            <WarningAmberIcon color='warning' sx={{ fontSize: 28 }} />
+            <Typography variant='body2'>
+              Aucun document indexé
+            </Typography>
+          </Paper>
+        )}
+        {data.length > 0 && (
+          <DataGrid
+            columns={columns}
+            rows={data}
+            rowCount={count}
+            paginationModel={paginationModel}
+            paginationMode='server'
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPaginationModelChange={handlePaginationChange}
+          />
+        )}
       </Box>
       <ConfirmationDialog
         id="confirmation-delete-document"
@@ -167,7 +209,7 @@ function RouteComponent() {
         color={color}
         onClose={() => setOpenSnackbar(false)}
       />
-      <Dialog 
+      <Dialog
         maxWidth='xs'
         fullWidth
         open={isUpdating}
@@ -176,7 +218,7 @@ function RouteComponent() {
             setIsUpdating(false);
         }}
       >
-      <DialogTitle>Mise à jour</DialogTitle>
+        <DialogTitle>Mise à jour</DialogTitle>
         <DialogContent>
           Merci de patientier durant la mise à jour des données
         </DialogContent>

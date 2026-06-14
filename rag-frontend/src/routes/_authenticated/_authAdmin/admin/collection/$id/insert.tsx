@@ -2,13 +2,15 @@ import { useEffect, useState } from 'react';
 import { createFileRoute, useLoaderData, useRouter } from '@tanstack/react-router';
 import Dropzone from 'react-dropzone'
 import { useAtom, useSetAtom } from 'jotai';
-import { Box, Button, Chip, Divider, Grid, Typography } from '@mui/material';
+import { Box, Button, Chip, Divider, Grid, Paper, Typography } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 import InsertionList from '@components/InsertionList';
-import { 
-  jobIngestionIdsAtom, 
-  jobIngestionUpdatedAtom, 
-  updateJobIngestionAtom 
+import {
+  jobIngestionIdsAtom,
+  jobIngestionUpdatedAtom,
+  updateJobIngestionAtom
 } from '@store/jobIngestionStore';
 import { startDocumentInsertion } from '@api/collections';
 import { fetchFinishedIngestionJobCollection } from '@api/jobs';
@@ -18,7 +20,7 @@ import type { FinishedIngestionJob } from '@appTypes/Job';
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/collection/$id/insert',
 )({
-  loader: async({ params: { id }, context: { queryClient } }) => {
+  loader: async ({ params: { id }, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
       queryKey: ['finishedIngestionJobs', id],
       queryFn: () => fetchFinishedIngestionJobCollection(id)
@@ -30,14 +32,14 @@ export const Route = createFileRoute(
 function RouteComponent() {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const collection = useLoaderData({ 
+  const collection = useLoaderData({
     from: '/_authenticated/_authAdmin/admin/collection/$id'
   });
   const setJobIds = useSetAtom(jobIngestionIdsAtom);
   const updateJob = useSetAtom(updateJobIngestionAtom);
-  const [jobIngestionUpdated, setJobIngestionUpdated] = 
+  const [jobIngestionUpdated, setJobIngestionUpdated] =
     useAtom(jobIngestionUpdatedAtom);
-  const [files, setFiles] = useState<File []>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
@@ -45,7 +47,7 @@ function RouteComponent() {
       queryClient.resetQueries({
         queryKey: ['finishedIngestionJobs', String(collection.id)]
       });
-      queryClient.resetQueries({ 
+      queryClient.resetQueries({
         queryKey: ['collections', String(collection.id)]
       });
       setJobIngestionUpdated(false);
@@ -85,10 +87,20 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6'>
-        Insertion de documents
+      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
+        <UploadFileIcon color="primary" />Insertion de documents
       </Typography>
       <Divider sx={{ mb: 2 }} />
+      <Paper variant='outlined' sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'action.hover', borderColor: 'info.main', display: 'flex', gap: 2 }}>
+        <InfoOutlinedIcon color='info' sx={{ fontSize: 28 }} />
+        <Box>
+          <Typography variant='subtitle1' fontWeight='bold' mb={0.5}>Comment ça fonctionne ?</Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Sélectionnez des fichiers PDF ou Word à insérer dans la base de connaissance en les glissant-déposant ci-dessous, ou en cliquant sur l'icône "Upload".
+            Une fois les fichiers sélectionnées, cliquer sur le bouton "INSÉRER" pour lancer le traitement. Les documents sont envoyés pour traitement, ce qui peut prendre quelques minutes selon le nombre de pages et le nombre de documents.
+          </Typography>
+        </Box>
+      </Paper>
       <Box
         component='section'
         sx={{
@@ -97,9 +109,6 @@ function RouteComponent() {
           alignItems: 'flex-start',
         }}
       >
-        <Typography variant='body2' mb={2}>
-          Sélectionner les fichiers pdf ou Word à insérer dans la base de connaissance.
-        </Typography>
         <Dropzone
           onDrop={(acceptedFiles) => handleChange(acceptedFiles)}
           accept={{
@@ -132,11 +141,11 @@ function RouteComponent() {
         <Box sx={{ mt: 2, mb: 2 }}>
           {
             files && Array.from(files).map((file, ind) => (
-              <Chip 
+              <Chip
                 key={`file-${ind}`}
-                label={file.name}  
+                label={file.name}
                 sx={{ mr: 2 }}
-                onDelete={() => handleDelete(ind)} 
+                onDelete={() => handleDelete(ind)}
               />
             ))
           }

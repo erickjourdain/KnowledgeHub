@@ -1,33 +1,36 @@
 import { useState } from 'react';
-import { 
-  createFileRoute, 
-  useLoaderData, 
-  useNavigate, 
-  useParams, 
-  useRouter 
+import {
+  createFileRoute,
+  useLoaderData,
+  useNavigate,
+  useParams,
+  useRouter
 } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { 
-  Box, 
-  Dialog, 
-  DialogContent, 
-  DialogTitle, 
-  Divider, 
-  Grid, 
-  Typography 
+import {
+  Box,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Grid,
+  Paper,
+  Typography
 } from '@mui/material';
-import { 
+import {
   DataGrid,
-  type GridColDef, 
+  type GridColDef,
   type GridPaginationModel,
-  type GridRowParams, 
+  type GridRowParams,
 } from '@mui/x-data-grid';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import { 
-  addCollectionUser, 
-  deleteCollectionUser, 
-  fetchCollectionUsersStatut 
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import PeopleIcon from '@mui/icons-material/People';
+import {
+  addCollectionUser,
+  deleteCollectionUser,
+  fetchCollectionUsersStatut
 } from '@api/collections';
 import { fetchUsers } from '@api/users';
 import type { UserAuth } from '@appTypes/User';
@@ -47,15 +50,15 @@ export const Route = createFileRoute(
     }
   },
   loaderDeps: ({ search: { page, pageSize } }) => ({ page, pageSize }),
-  loader: async ({ params, deps: { page, pageSize }, context: {queryClient }}) => {
+  loader: async ({ params, deps: { page, pageSize }, context: { queryClient } }) => {
     const users = await queryClient.ensureQueryData({
       queryKey: ['users'],
       queryFn: () => fetchUsers(page, pageSize, true)
     });
-    const authorization =await queryClient.ensureQueryData({
+    const authorization = await queryClient.ensureQueryData({
       queryKey: ['authorizedUsers', params.id, users.data.map(u => u.id).join(',')],
       queryFn: () => fetchCollectionUsersStatut(
-        params.id, 
+        params.id,
         users.data.map(u => u.id)
       )
     });
@@ -79,10 +82,10 @@ function RouteComponent() {
   const router = useRouter();
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
-  const { id } = 
-    useParams({ from: '/_authenticated/_authAdmin/admin/collection/$id'});
-  const { data, count } = 
-    useLoaderData({ from: '/_authenticated/_authAdmin/admin/collection/$id/users'});
+  const { id } =
+    useParams({ from: '/_authenticated/_authAdmin/admin/collection/$id' });
+  const { data, count } =
+    useLoaderData({ from: '/_authenticated/_authAdmin/admin/collection/$id/users' });
   const [paginationModel, setPaginationModel] = useState({
     page: 1,
     pageSize: 25
@@ -99,11 +102,11 @@ function RouteComponent() {
   const handleRowDoubleClick = async (params: GridRowParams) => {
     setIsUpdating(true);
     try {
-      if (params.row.is_authorised) 
+      if (params.row.is_authorised)
         await deleteCollectionUser(String(id), String(params.row.id));
-      else 
+      else
         await addCollectionUser(String(id), String(params.row.id));
-      queryClient.resetQueries({ 
+      queryClient.resetQueries({
         queryKey: ['authorizedUsers', String(id), data.map(d => d.id).join(',')]
       });
       router.invalidate();
@@ -115,13 +118,13 @@ function RouteComponent() {
   }
 
   const columns: GridColDef[] = [
-    { field: 'username', headerName: 'Nom', flex: 0.5},
-    { field: 'email', headerName: 'E-mail', flex: 1},
-    { field: 'role', headerName: 'Rôle', flex: 0.25},
-    { 
-      field: 'is_authorised', 
-      headerName: 'Autorisé', 
-      minWidth: 50, 
+    { field: 'username', headerName: 'Nom', flex: 0.5 },
+    { field: 'email', headerName: 'E-mail', flex: 1 },
+    { field: 'role', headerName: 'Rôle', flex: 0.25 },
+    {
+      field: 'is_authorised',
+      headerName: 'Autorisé',
+      minWidth: 50,
       renderCell: (params) => {
         if (params.value) return <CheckIcon color='success' />
         else return <CloseIcon color='error' />
@@ -131,14 +134,36 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6'>
-        Gestion des utilisateurs
+      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
+        <PeopleIcon color="primary" />Gestion des utilisateurs
       </Typography>
       <Divider sx={{ mb: 2 }} />
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 2,
+          backgroundColor: 'action.hover',
+          borderColor: 'info.main',
+          display: 'flex',
+          gap: 2
+        }}
+      >
+        <InfoOutlinedIcon color="info" sx={{ fontSize: 28 }} />
+        <Box>
+          <Typography variant='subtitle1' fontWeight='bold' mb={0.5}>
+            Autorisation d'accès à la collection
+          </Typography>
+          <Typography variant='body2' color='text.secondary'>
+            Double‑clic sur une ligne pour autoriser ou révoquer l'accès d'un utilisateur à la collection.
+          </Typography>
+        </Box>
+      </Paper>
       <Box>
         <Box display='flex' flexDirection='column'>
           <DataGrid
-            columns={columns} 
+            columns={columns}
             rows={data}
             rowCount={count}
             paginationModel={paginationModel}
@@ -150,7 +175,7 @@ function RouteComponent() {
             sx={{ cursor: 'pointer' }}
           />
         </Box>
-        <Dialog 
+        <Dialog
           maxWidth='xs'
           fullWidth
           open={isUpdating}
