@@ -13,6 +13,7 @@ from app.models.job import JobIngestion, JobQueryKb
 from app.models.enum import RoleEnum
 from app.models.user import User
 from app.schemas import JobIngestionResponse, JobKbResponse, JobResponse
+from app.services.cleanup import cleanup_finished_ingestion_jobs
 from app.services.collections import check_is_gestionnaire
 
 
@@ -137,3 +138,11 @@ def get_kb_job_collection_user(
         , JobQueryKb.status == "finished")).limit(20).all()
     
     return response
+
+@router.delete("/ingestion/cleanup", response_model=dict)
+def cleanup_ingestion_jobs(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete finished ingestion jobs older than 24h. Admin only."""
+    if current_user.role != RoleEnum.ADMIN:
+        raise HTTPException(status_code=403, detail="Permission denied")
+    deleted = cleanup_finished_ingestion_jobs(db)
+    return {"deleted": deleted}

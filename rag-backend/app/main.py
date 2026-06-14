@@ -7,7 +7,10 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
-from app.config.database import get_db
+from app.config.database import get_db, SessionLocal
+import asyncio
+from datetime import datetime, time, timedelta
+from app.services.cleanup import cleanup_finished_ingestion_jobs
 from app.database_init import init_db
 from app.models import Collection
 from app.config.ollama import get_ollama_client
@@ -18,8 +21,28 @@ from app.core.queue import redis_conn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup : créer l'admin si pas existant (les tables sont gérées par alembic)
+    # Startup: initialize DB and run cleanup
     init_db()
+    # Run cleanup once at startup
+    db = SessionLocal()
+    try:
+        cleanup_finished_ingestion_jobs(db)
+    finally:
+        db.close()
+    # Schedule daily cleanup at 6am
+    async def _daily_cleanup_task():
+        while True:
+            now = datetime.now()
+            next_run = datetime.combine(now.date(), time(6, 0))
+            if now >= next_run:
+                next_run += timedelta(days=1)
+            await asyncio.sleep((next_run - now).total_seconds())
+            db = SessionLocal()
+            try:
+                cleanup_finished_ingestion_jobs(db)
+            finally:
+                db.close()
+    asyncio.create_task(_daily_cleanup_task())
     yield
     # Shutdown : tu peux ajouter du code ici si besoin
 
