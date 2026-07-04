@@ -5,6 +5,9 @@ import ConfirmationMessage from '@components/ConfirmationMessage';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { deleteCollection } from '@api/collections';
+import { useAtomValue } from 'jotai';
+import { jobIngestionIdsAtom } from '@store/jobIngestionStore';
+import { jobReindexIdsAtom } from '@store/jobReindexStore';
 
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/collection/$id/delete',
@@ -22,6 +25,10 @@ function RouteComponent() {
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
   const [message, setMessage] = useState<string>("");
   const [color, setColor] = useState<"success" | "error">("success");
+
+  const ingestionIds = useAtomValue(jobIngestionIdsAtom);
+  const reindexIds = useAtomValue(jobReindexIdsAtom);
+  const isOperationInProgress = ingestionIds.length > 0 || reindexIds.length > 0;
 
   const handleDelete = () => {
     if (collection.name === collectionName) {
@@ -78,6 +85,26 @@ function RouteComponent() {
         </Typography>
       </Box>
     </Paper>
+    {isOperationInProgress && (
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2,
+          mb: 3,
+          borderRadius: 2,
+          backgroundColor: 'rgba(211, 47, 47, 0.08)',
+          borderColor: 'error.main',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5
+        }}
+      >
+        <InfoOutlinedIcon color="error" />
+        <Typography variant="body2" color="error.main" fontWeight="medium">
+          Impossible de supprimer la collection : une opération d'indexation ou de réindexation est actuellement en cours.
+        </Typography>
+      </Paper>
+    )}
     <Box>
       <Typography variant='body2' color='warning' mb={1}>
         Veuillez entrer le nom exact de la collection pour confirmer la suppression.
@@ -87,6 +114,7 @@ function RouteComponent() {
         placeholder='confirmer le nom de la collection'
         autoFocus
         fullWidth
+        disabled={isOperationInProgress}
         sx={{ mt: 2, mb: 2 }}
         onChange={(e) => setCollectionName(e.target.value.trim())}
       />
@@ -94,7 +122,7 @@ function RouteComponent() {
         color='error'
         variant='contained'
         startIcon={<DeleteIcon />}
-        disabled={isLoading || collectionName !== collection.name}
+        disabled={isLoading || collectionName !== collection.name || isOperationInProgress}
         onClick={() => setIsDialogOpen(true)}
         sx={{
           px: 3,

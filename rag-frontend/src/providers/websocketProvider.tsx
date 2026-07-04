@@ -13,13 +13,14 @@ import {
   updateJobIngestionAtom,
 } from "@store/jobIngestionStore";
 import {
+  jobReindexFinishedIdsAtom,
   jobReindexIdsAtom,
-  jobReindexUpdatedAtom,
   updateJobReindexAtom,
 } from "@store/jobReindexStore";
 
 import { jobQueryAtom } from "@store/jobQueryStore";
 import type { JobDocument, JobInfoStatut } from "@appTypes/Job";
+import { fecthIngestionJob } from "@api/jobs";
 
 interface WSContextType {
   socket: WebSocket | null
@@ -37,11 +38,13 @@ export function WebSocketProvider({
 
   const [jobIngestionIds, setJobIngestionIds] = useAtom(jobIngestionIdsAtom);
   const [jobReindexIds, setJobReindexIds] = useAtom(jobReindexIdsAtom);
+  const setJobReindexFinishedIds = useSetAtom(jobReindexFinishedIdsAtom);
   const [jobQuery, setJobQuery] = useAtom(jobQueryAtom);
   const updateJobIngestion = useSetAtom(updateJobIngestionAtom);
   const updateJobReindex = useSetAtom(updateJobReindexAtom);
   const setJobIngestionUpdated = useSetAtom(jobIngestionUpdatedAtom);
-  const setJobReindexUpdated = useSetAtom(jobReindexUpdatedAtom);
+  const updateReindexJob = useSetAtom(updateJobReindexAtom);
+  const updateReindexFinishedJob = useSetAtom(updateJobReindexAtom);
   const token = useAtomValue(tokenAtomStorage);
 
   // Refs to always have the latest IDs inside the ws.onmessage closure
@@ -105,9 +108,27 @@ export function WebSocketProvider({
         }
         updateJobIngestion(data);
       } else if (jobReindexIdsRef.current.includes(data.job_id)) {
+        // Démarrage du job de réindexation
+        if (data.status === "started" && data.progress === 0) {
+          // Recherche des informations sur le job
+          const response = await fecthIngestionJob(data.job_id);
+          updateReindexJob({
+            ...data,
+            filename: response.filename,
+          });
+        }
+        // Fin du job de réindexation
         if (data.progress === 100) {
+          // Suppression de la liste des jobs en cours
           setJobReindexIds((prev) => prev.filter((id) => id !== data.job_id));
-          setJobReindexUpdated(true);
+          // Ajout à la liste des jobs terminés
+          setJobReindexFinishedIds((prev) => [...prev, data.job_id]);
+          // Mise à jour des informations du job terminé
+          const response = await fecthIngestionJob(data.job_id);
+          updateReindexFinishedJob({
+            ...data,
+            filename: response.filename,
+          });
         }
         updateJobReindex(data);
         console.log('Updated reindex store for job', data.job_id, data);

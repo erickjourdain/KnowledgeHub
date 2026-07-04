@@ -40,7 +40,7 @@ def get_ingestion_job(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    """Récupérer l'état d'un job d'ingestion terminé"""
+    """Récupérer l'état d'un job d'ingestion"""
     job = db.query(JobIngestion).filter(JobIngestion.uuid == uuid).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job non trouvé")

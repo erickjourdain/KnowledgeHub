@@ -7,11 +7,12 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import JobItemStatus from "@components/JobItemStatus";
 import { jobIngestionIdsAtom } from "@store/jobIngestionStore";
+import type { IngestionJob } from "@appTypes/Job";
 
 function InsertionList() {
   const finishedIngestionJobs = useLoaderData({
     from: '/_authenticated/_authAdmin/admin/collection/$id/insert'
-  });
+  }) as IngestionJob[];
   const jobIds = useAtomValue(jobIngestionIdsAtom)
 
   return (
@@ -33,7 +34,7 @@ function InsertionList() {
       }
       <Typography variant="h6" sx={{ mt: 2 }}>Traitement terminée</Typography>
       {
-        finishedIngestionJobs.map(job => (
+        finishedIngestionJobs.map((job: IngestionJob) => (
           <ListItem disablePadding key={job.uuid}>
             <ListItemIcon>
               {

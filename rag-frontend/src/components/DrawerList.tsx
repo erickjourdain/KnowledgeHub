@@ -8,6 +8,8 @@ import {
   ListItemIcon,
   ListItemText,
   ListSubheader,
+  Typography,
+  CircularProgress,
 } from "@mui/material";
 import ArticleIcon from '@mui/icons-material/Article';
 import ChatIcon from '@mui/icons-material/Chat';
@@ -19,6 +21,8 @@ import type { AuthState } from "@appTypes/AuthState";
 import { Route } from "../routes/_authenticated";
 import { isAdmin, isCreator } from "@utils/security";
 import { collectionAtom } from "@store/collectionStore";
+import { jobIngestionIdsAtom } from "@store/jobIngestionStore";
+import { jobReindexIdsAtom } from "@store/jobReindexStore";
 
 
 
@@ -26,6 +30,10 @@ export function DrawerList() {
   const navigate = useNavigate();
   const { auth }: { auth: AuthState } = Route.useRouteContext();
   const collection = useAtomValue(collectionAtom);
+
+  const ingestionIds = useAtomValue(jobIngestionIdsAtom);
+  const reindexIds = useAtomValue(jobReindexIdsAtom);
+  const hasRunningJobs = ingestionIds.length > 0 || reindexIds.length > 0;
 
   const handleHome = () => {
     navigate({ 
@@ -121,6 +129,44 @@ export function DrawerList() {
                   </ListItemButton>
                 </ListItem>
               }
+            </>
+          )
+        }
+        {
+          hasRunningJobs && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Box sx={{ px: 3, py: 1.5 }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight="bold"
+                  sx={{
+                    textTransform: 'uppercase',
+                    display: 'block',
+                    mb: 1.5,
+                    letterSpacing: '0.8px'
+                  }}
+                >
+                  Opérations en cours
+                </Typography>
+                {ingestionIds.length > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                    <CircularProgress size={16} color="info" />
+                    <Typography variant="body2" color="text.secondary">
+                      Indexation : {ingestionIds.length} fichier{ingestionIds.length > 1 ? 's' : ''}
+                    </Typography>
+                  </Box>
+                )}
+                {reindexIds.length > 0 && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <CircularProgress size={16} color="info" />
+                    <Typography variant="body2" color="text.secondary">
+                      Réindexation : {reindexIds.length} fichier{reindexIds.length > 1 ? 's' : ''}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
             </>
           )
         }

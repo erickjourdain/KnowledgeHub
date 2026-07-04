@@ -10,6 +10,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'; 
 import logoUrl from "../assets/logo.png"
 import { type MyRouterContext } from "../router";
+import IndexingIndicator from "@components/IndexingIndicator";
 
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -33,6 +34,7 @@ function RootLayout() {
           <Typography variant="h6" sx={{ flexGrow: 1 }}>
             RAG-AI
           </Typography>
+          <IndexingIndicator />
         </Toolbar>
       </AppBar>
       <Outlet />

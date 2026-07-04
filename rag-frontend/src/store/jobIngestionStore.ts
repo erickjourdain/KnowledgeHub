@@ -1,6 +1,6 @@
 import { atom } from 'jotai';
 import { atomFamily } from 'jotai-family';
-import type { FinishedIngestionJob, JobDocument } from '@appTypes/Job';
+import type { IngestionJob, JobDocument } from '@appTypes/Job';
 
 const jobIngestionIdsAtom = atom<string[]>([]);
 
@@ -30,7 +30,7 @@ const updateJobIngestionAtom = atom(
   }
 );
 
-const jobsIngestionFinishedAtom = atom<FinishedIngestionJob[]>([]);
+const jobsIngestionFinishedAtom = atom<IngestionJob[]>([]);
 
 const jobIngestionUpdatedAtom = atom<boolean>(false);
 

@@ -1,6 +1,6 @@
 import type { Document } from "./Document"
 
-export type JobStatus = 'queued' | 'started' | 'finished' | 'failed' 
+export type JobStatus = 'queued' | 'started' | 'finished' | 'failed'
   | 'stopped' | 'canceled' | 'deferred' | null
 
 export interface JobInfoStatut {
@@ -8,7 +8,7 @@ export interface JobInfoStatut {
   status: JobStatus
   type: 'ingestion' | 'query'
   step: 'starting' | 'conversion' | 'chunking' | 'embedding' | 'file_storage'
-    | 'db_storage' | 'done' | null
+  | 'db_storage' | 'done' | null
   message: string | null
   progress: number
 }
@@ -25,7 +25,7 @@ export interface Job {
   error?: string
 }
 
-export interface FinishedIngestionJob {
+export interface IngestionJob {
   id: number
   uuid: string
   collection_id: number
@@ -46,20 +46,20 @@ export interface Source {
 }
 
 export interface RagResponse {
-    query: string
-    title: string | null
-    reponse: string
-    sources: Source[]
+  query: string
+  title: string | null
+  reponse: string
+  sources: Source[]
 }
 
 export interface FinishedKbQueryJob {
-    id: number
-    uuid: string
-    collection_id: number
-    query: string
-    creator_id: number
-    status: string
-    result: RagResponse | null
-    error: string | null
-    created_at: Date
+  id: number
+  uuid: string
+  collection_id: number
+  query: string
+  creator_id: number
+  status: string
+  result: RagResponse | null
+  error: string | null
+  created_at: Date
 }

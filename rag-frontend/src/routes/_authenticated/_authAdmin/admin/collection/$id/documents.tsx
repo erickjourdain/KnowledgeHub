@@ -27,6 +27,9 @@ import ConfirmationDialog from '@components/ConfirmationDialog';
 import ConfirmationMessage from '@components/ConfirmationMessage';
 import { deleteDocument, fetchCollectionDocument } from '@api/collections';
 import type { Document } from "@appTypes/Document";
+import { useAtomValue } from 'jotai';
+import { jobIngestionIdsAtom } from '@store/jobIngestionStore';
+import { jobReindexIdsAtom } from '@store/jobReindexStore';
 
 type RouteSearch = {
   page?: number;
@@ -76,6 +79,10 @@ function RouteComponent() {
   const [message, setMessage] = useState<string>("");
   const [color, setColor] = useState<"success" | "error">("success");
 
+  const ingestionIds = useAtomValue(jobIngestionIdsAtom);
+  const reindexIds = useAtomValue(jobReindexIdsAtom);
+  const isOperationInProgress = ingestionIds.length > 0 || reindexIds.length > 0;
+
   const handleConfirmationDeleteDocument = useCallback((confirmed?: boolean) => {
     setOpenDialog(false);
     if (confirmed && documentToDelete) {
@@ -124,6 +131,7 @@ function RouteComponent() {
         <IconButton
           aria-label="delete"
           color="warning"
+          disabled={isOperationInProgress}
           onClick={() => {
             setDocumentToDelete(data.find(d => d.id === params.value) || null);
             setOpenDialog(true);
@@ -164,6 +172,26 @@ function RouteComponent() {
           </Typography>
         </Box>
       </Paper>
+      {isOperationInProgress && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: 2,
+            backgroundColor: 'rgba(211, 47, 47, 0.08)',
+            borderColor: 'error.main',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5
+          }}
+        >
+          <InfoOutlinedIcon color="error" />
+          <Typography variant="body2" color="error.main" fontWeight="medium">
+            La suppression de documents est désactivée car une opération d'indexation ou de réindexation est actuellement en cours.
+          </Typography>
+        </Paper>
+      )}
       <Box display='flex' flexDirection='column'>
         {data.length === 0 && (
           <Paper

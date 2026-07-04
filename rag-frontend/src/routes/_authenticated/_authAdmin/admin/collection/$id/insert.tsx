@@ -15,7 +15,7 @@ import {
 import { startDocumentInsertion } from '@api/collections';
 import { fetchFinishedIngestionJobCollection } from '@api/jobs';
 import { useQueryClient } from '@tanstack/react-query';
-import type { FinishedIngestionJob } from '@appTypes/Job';
+import type { IngestionJob } from '@appTypes/Job';
 
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/collection/$id/insert',
@@ -24,7 +24,7 @@ export const Route = createFileRoute(
     return await queryClient.ensureQueryData({
       queryKey: ['finishedIngestionJobs', id],
       queryFn: () => fetchFinishedIngestionJobCollection(id)
-    }) as FinishedIngestionJob[];
+    }) as IngestionJob[];
   },
   component: RouteComponent,
 })

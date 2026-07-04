@@ -18,7 +18,8 @@ export default function JobReindexItemStatus({ jobId }: JobStatusProps) {
     if (!job) return;
     switch (job.status) {
       case "queued":
-        setEtat("en attente");
+        // Hide queued jobs
+        setEtat("");
         break;
       case "started":
         setEtat(`${job.message || "traitement en cours"}`);
@@ -43,8 +44,6 @@ export default function JobReindexItemStatus({ jobId }: JobStatusProps) {
         break;
     }
   }, [job]);
-
-  if (!job) return null;
 
   return (
     <ListItemText

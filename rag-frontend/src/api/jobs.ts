@@ -1,26 +1,26 @@
-import type { FinishedIngestionJob } from "../types/Job";
+import type { IngestionJob } from "../types/Job";
 import instance from "./instance"
 
-const fecthFinishedIngestionJob = async (jobId: string): Promise<FinishedIngestionJob> => {
+const fecthIngestionJob = async (jobId: string): Promise<IngestionJob> => {
   try {
     const response = await instance.get(`/jobs/ingestion/${jobId}`);
-    return response.data as FinishedIngestionJob;
+    return response.data as IngestionJob;
   } catch (error) {
     throw new Error("Impossible de charger le job");
   }
 }
 
-const fetchFinishedIngestionJobCollection = 
-  async (collectionId: string): Promise<FinishedIngestionJob[]> => {
+const fetchFinishedIngestionJobCollection =
+  async (collectionId: string): Promise<IngestionJob[]> => {
     try {
       const response = await instance.get(`/jobs/ingestion/collection/${collectionId}`);
-      return response.data as FinishedIngestionJob[]
+      return response.data as IngestionJob[]
     } catch (error) {
       throw new Error("Impossible de charger les jobs de la collection");
     }
   }
 
 export {
-  fecthFinishedIngestionJob,
+  fecthIngestionJob,
   fetchFinishedIngestionJobCollection
 }
