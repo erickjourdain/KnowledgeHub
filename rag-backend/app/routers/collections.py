@@ -2,14 +2,14 @@ import os
 from typing import List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from rq.job import JobStatus
+from rq.job import JobStatus, Job
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
-from app.core.queue import ingestion_queue
+from app.core.queue import ingestion_queue, redis_conn
 from app.config.database import get_db
 from app.jobs.ingestion import ingestion_job
-from app.models import User, RoleEnum, Document
+from app.models import User, RoleEnum, Document, JobIngestion
 from app.schemas import (
     CollectionCreate,
     CollectionResponse, 
@@ -34,7 +34,8 @@ from app.services.collections import (
     get_collections_without_relations,
     get_nb_collections,
     remove_user,
-    update_collection
+    update_collection,
+    check_collection_has_active_jobs
 )
 from app.services.documents import(
     delete_document,
@@ -182,12 +183,17 @@ def sup_collection(
         if not collection:
             raise HTTPException(status_code=404, detail="Collection non trouvée")
         
+        # Vérification s'il existe des travaux d'ingestion ou de réindexation en cours pour cette collection
+        check_collection_has_active_jobs(collection_id, db)
+
         delete_collection(collection_id=collection_id, collection_uuid=collection.uuid, db=db)
         
         return BackendResponse(
             status=True,
             message="Collection supprimée"
         )
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Error in delete_collection: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la suppression de la collection")
@@ -210,6 +216,9 @@ def remove_document_from_collection(
         
         if not collection:
             raise HTTPException(status_code=404, detail="Collection non trouvée")
+
+        # Vérification s'il existe des travaux d'ingestion ou de réindexation en cours pour cette collection
+        check_collection_has_active_jobs(collection_id, db)
     
         delete_document(document_id=document_id, collection_uuid=collection.uuid, db=db)
         return BackendResponse(
@@ -395,6 +404,9 @@ def reindex_collection_or_document(
         
         if not collection:
             raise HTTPException(status_code=404, detail="Collection non trouvée")
+
+        # Vérification s'il existe des travaux d'ingestion ou de réindexation en cours pour cette collection
+        check_collection_has_active_jobs(collection_id, db)
 
         # 2. Identification des documents à réindexer
         if document_id is not None:

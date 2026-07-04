@@ -13,5 +13,5 @@
     "reportUnknownAttributeType": false,
     "pythonVersion": "3.11",
     "venvPath": ".",
-    "venv": "venv"
+    "venv": ".venv"
 }
