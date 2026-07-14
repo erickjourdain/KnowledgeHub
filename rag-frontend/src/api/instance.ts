@@ -30,6 +30,8 @@ instance.interceptors.request.use(
     const token = JSON.parse(localStorage.getItem('auth-token') || "null");
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete config.headers['Authorization'];
     }
     return config;
   },

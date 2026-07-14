@@ -36,14 +36,4 @@ const apiAutoLogin = async (): Promise<User> => {
   }
 }
 
-const apiLogout = async (): Promise<void> => {
-  try {
-    await instance.post("/users/logout");
-  } catch (error: any) {
-    if (typeof AxiosError && error.response && error.response.data)
-      throw new Error(error.response.data.detail || "Impossible de se déconnecter");
-    throw new Error("Impossible de se déconnecter")
-  }
-}
-
-export { apiLogin, apiAutoLogin, apiLogout };
+export { apiLogin, apiAutoLogin };

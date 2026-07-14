@@ -1,10 +1,11 @@
 import React, { createContext, useCallback, useContext, useState, useEffect } from "react";
 import { Box, Grid, LinearProgress, Typography } from "@mui/material";
 import { useAtom } from "jotai";
-import { apiAutoLogin, apiLogin, apiLogout } from "@api/connection";
+import { apiAutoLogin, apiLogin } from "@api/connection";
 import { tokenAtomStorage } from "@store/authStore";
 import type { TokenResponse, User } from "@appTypes/User";
 import type { AuthState } from "@appTypes/AuthState";
+import instance from "@api/instance";
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
@@ -39,19 +40,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await apiLogout();
-      //localStorage.removeItem('auth-token');
+      // Supprimer le token de connexion
       setToken("");
+      localStorage.removeItem("auth-token");
+      
+      // Remettre à zéro l'instance axios en supprimant le Bearer token
+      delete instance.defaults.headers.common["Authorization"];
+      
       setUser(null);
       setIsAuthenticated(false);
+      
+      // Rediriger l'utilisateur vers la page de login
+      window.location.href = "/login";
     } catch (error) {
-      throw error;
+      console.error("Error during logout:", error);
     }
-  }, []);
+  }, [setToken]);
 
   useEffect(() => {
+    let initialToken = "";
+    try {
+      initialToken = JSON.parse(localStorage.getItem("auth-token") || "null") || "";
+    } catch (error) {
+      console.error("Error reading auth-token from localStorage:", error);
+    }
+
     setLoading(true);
-    autoLogin(token)
+    autoLogin(initialToken)
       .then((user) => {
         setUser(user);
         setIsAuthenticated(!!user);
@@ -61,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }).finally(() => {
         setLoading(false);
       });
-  }, [token]);
+  }, []);
 
   if (loading) {
     return (
