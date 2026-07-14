@@ -1,5 +1,4 @@
 import type { ChatConversation, ChatUser } from '@mui/x-chat/headless';
-import { green, yellow } from '@mui/material/colors';
 import type { User } from '@appTypes/User';
 import logoUrl from '../assets/logo.png';
 
@@ -18,9 +17,9 @@ function adjustColor(hex: string, percent: number): string {
   return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
 }
 
-export function createAvatarDataUrl (
-  label: string, 
-  background: string, 
+export function createAvatarDataUrl(
+  label: string,
+  background: string,
   foreground = '#ffffff'
 ) {
   let fillValue = background;
@@ -40,7 +39,7 @@ export function createAvatarDataUrl (
 }
 
 export function createAvatar(
-  user: User | 'assistant' | null, 
+  user: User | 'assistant' | null,
   color: string = '#9c27b0'
 ): ChatUser {
   if (user === 'assistant') {

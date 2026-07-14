@@ -93,11 +93,39 @@ const fetchMessage = async (
   }
 }
 
+const fetchLlmModels = async (): Promise<LlmModel[]> => {
+  try {
+    const response = await instance.get("/ollama/models");
+    return response.data as LlmModel[];
+  } catch (error) {
+    throw new Error("Erreur lors de la récupération des modèles");
+  }
+}
+
+const fetchDefaultLlmModel = async (): Promise<{ default_model: string }> => {
+  try {
+    const response = await instance.get("/ollama/default-model");
+    return response.data as { default_model: string };
+  } catch (error) {
+    throw new Error("Erreur lors de la récupération du modèle par défaut");
+  }
+}
+
+export interface LlmModel {
+  name: string;
+  digest?: string | null;
+  size?: number | null;
+  embed: boolean;
+  parameter_size?: string | null;
+}
+
 export {
   testChat,
   queryRag,
   fetchFinishedKbJob,
   fetchConversations,
   fetchConversationMessages,
-  fetchMessage
+  fetchMessage,
+  fetchLlmModels,
+  fetchDefaultLlmModel
 }

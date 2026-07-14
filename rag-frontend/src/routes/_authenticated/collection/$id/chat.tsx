@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -18,8 +18,13 @@ import {
   fetchConversations,
   fetchConversationMessages,
   queryRag,
-  fetchMessage
+  fetchMessage,
+  fetchLlmModels,
+  fetchDefaultLlmModel,
+  type LlmModel
 } from '@api/chat';
+import { Box, MenuItem, Select } from '@mui/material';
+import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { jobQueryAtom } from '@store/jobQueryStore';
 import { conversationAtom } from '@store/conversationStore';
 import { createAvatar, createAvatarDataUrl, createEmptyConversation } from '@utils/chat';
@@ -45,6 +50,107 @@ function RouteComponent() {
   const queryClient = useQueryClient();
   const { id } = Route.useParams();
   const setJobId = useSetAtom(jobQueryAtom);
+
+  const [models, setModelsList] = useState<LlmModel[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>('');
+
+  useEffect(() => {
+    fetchLlmModels()
+      .then((data) => {
+        setModelsList(data.filter((m) => !m.embed));
+      })
+      .catch((err) => console.error("Erreur lors de la récupération des modèles", err));
+
+    fetchDefaultLlmModel()
+      .then((res) => {
+        setSelectedModel(res.default_model);
+      })
+      .catch((err) => console.error("Erreur lors de la récupération du modèle par défaut", err));
+  }, []);
+
+  const ComposerToolbar = useMemo(() => {
+    return (props: any) => (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SmartToyIcon sx={{ color: 'primary.light', fontSize: '1.2rem' }} />
+          <Select
+            value={selectedModel || ""}
+            onChange={(e) => setSelectedModel(e.target.value)}
+            size="small"
+            variant="standard"
+            disableUnderline
+            sx={{
+              color: 'text.primary',
+              fontSize: '0.85rem',
+              fontWeight: 500,
+              '& .MuiSelect-select': {
+                py: 0.5,
+                px: 1.5,
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                '&:focus': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
+                  borderRadius: '8px',
+                }
+              },
+              '& .MuiSvgIcon-root': {
+                color: 'text.secondary',
+              }
+            }}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderRadius: '12px',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                  '& .MuiMenuItem-root': {
+                    fontSize: '0.85rem',
+                    py: 1,
+                    px: 1.5,
+                    color: 'text.primary',
+                    '&:hover': {
+                      backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: 'rgba(99, 102, 241, 0.16)',
+                      color: 'primary.light',
+                      fontWeight: 600,
+                      '&:hover': {
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                      }
+                    }
+                  }
+                }
+              }
+            }}
+          >
+            {models.length === 0 ? (
+              <MenuItem value="" disabled>
+                Chargement des modèles...
+              </MenuItem>
+            ) : (
+              models.map((m) => (
+                <MenuItem key={m.name} value={m.name || ""}>
+                  {m.name} {m.parameter_size ? `(${m.parameter_size})` : ''}
+                </MenuItem>
+              ))
+            )}
+            {models.find((m) => m.name === selectedModel) === undefined && selectedModel && (
+              <MenuItem value={selectedModel}>
+                {selectedModel}
+              </MenuItem>
+            )}
+          </Select>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {props.children}
+        </Box>
+      </Box>
+    );
+  }, [models, selectedModel]);
   const [conversationState, setConversationState] =
     useAtom(conversationAtom);
   const [meChatUser] = useState<ChatUser>(createAvatar(auth.user, '#1976d2'));
@@ -191,7 +297,8 @@ function RouteComponent() {
       if (lastMessage.type !== 'text') return new ReadableStream();
       const query: RagQuery = {
         query: lastMessage.text,
-        collection_id: parseInt(id)
+        collection_id: parseInt(id),
+        model: selectedModel || undefined
       }
       if (activeConversationId !== 'new')
         query.conversation_uuid = activeConversationId
@@ -279,7 +386,8 @@ function RouteComponent() {
         onActiveConversationChange={setActiveConversationId}
         slots={{
           conversationTitle: ConversationHeaderTitle,
-          conversationHeaderActions: ConversationHeaderAction
+          conversationHeaderActions: ConversationHeaderAction,
+          composerToolbar: ComposerToolbar
         }}
         partRenderers={{
           'source-document': ({ part }) => <SourceDocumentCard part={part as any} />
