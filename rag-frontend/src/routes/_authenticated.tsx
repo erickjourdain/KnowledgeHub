@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Box, Drawer, Toolbar } from '@mui/material';
 import { createFileRoute, redirect, Outlet } from '@tanstack/react-router';
 
@@ -19,7 +20,8 @@ export const Route = createFileRoute('/_authenticated')({
 })
 
 function Authenticated() {
-  const drawerWidth = 240;
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const drawerWidth = isCollapsed ? 76 : 240;
 
   return (
     <>
@@ -28,13 +30,30 @@ function Authenticated() {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
+          [`& .MuiDrawer-paper`]: { 
+            width: drawerWidth, 
+            boxSizing: 'border-box',
+            transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            overflowX: 'hidden'
+          },
+          transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <Toolbar />
-        <DrawerList />
+        <DrawerList 
+          isCollapsed={isCollapsed} 
+          onToggleCollapse={() => setIsCollapsed(!isCollapsed)} 
+        />
       </Drawer>
-      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+      <Box 
+        component="main" 
+        sx={{ 
+          flexGrow: 1, 
+          p: 3,
+          width: `calc(100% - ${drawerWidth}px)`,
+          transition: 'width 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
         <Toolbar />
         <Outlet />
       </Box>

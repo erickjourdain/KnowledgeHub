@@ -148,6 +148,25 @@ export const fetchCollectionUsersStatut = async (
   }
 }
 
+export interface ChunkDetail {
+  id: number;
+  chunk_text: string;
+  dimension?: number | null;
+  embedding?: number[] | null;
+  chapter?: string | null;
+  section?: string | null;
+  subsection?: string | null;
+  page?: number | null;
+}
+
+/**
+ * Fetch detailed content of a specific chunk by its ID
+ */
+export const fetchChunk = async (chunkId: string | number): Promise<ChunkDetail> => {
+  const response = await instance.get(`/collections/chunks/${chunkId}`);
+  return response.data as ChunkDetail;
+};
+
 
 
 

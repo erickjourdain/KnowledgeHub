@@ -58,11 +58,20 @@ class RagQuery(BaseModel):
     model: Optional[str] = None
     top_k: Optional[int] = 5
 
+class Source(BaseModel):
+    id: int
+    fichier: str
+    chapitre: str
+    section: str
+    sous_section: str
+    pages: str
+    contenu: str
+
 class RagResponse(BaseModel):
     query: str
     title: Optional[str] = None
     reponse: str
-    sources: List[dict]
+    sources: List[Source]
 
 # === User Schemas ===
 class UserBase(BaseModel):

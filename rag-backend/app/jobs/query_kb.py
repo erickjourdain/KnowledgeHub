@@ -1,3 +1,4 @@
+from typing import cast
 from rq import get_current_job
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,7 @@ def query_kb_job(
     if job is None:
         raise RuntimeError("Aucun job RQ en cours d'exécution trouvé")
     
+    job_query_kb: JobQueryKb | None = None
     try:
         # Vérifier que la collection existe
         collection = db.query(Collection).get(collection_id)
@@ -61,7 +63,7 @@ def query_kb_job(
                 db.add(conversation)
                 db.commit()
                 db.refresh(conversation)
-                conversation_id = conversation.id
+                conversation_id = cast(int, conversation.id)
             else:
                 raise ValueError("Aucun titre généré pour la conversation, impossible de créer une nouvelle conversation sans titre")
         
@@ -94,7 +96,7 @@ def query_kb_job(
 
     except Exception as e:
         # Mettre à jour le job avec l'erreur
-        if 'job_query_kb' in locals():
+        if job_query_kb is not None:
             job_query_kb.status = job.get_status()
             job_query_kb.error = str(e)
             db.commit()

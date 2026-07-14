@@ -105,20 +105,22 @@ def create_context_block(sources: list[dict]) -> str:
     context_blocks = []
 
     for idx, source in enumerate(sources, start=1):
+        id = source.get('chunk_id') or "id non précisé"
         filename = source.get('title') or "titre non précisé"
         chapter = source.get('chapter') or "chapitre non précisé"
         section = source.get('section') or "section non precisée"
         subsection = source.get('subsection') or "sous-section non précisée"
         doc = source.get('text') or "contenu non précisé"
-        pages = source.get('pages') or "non spécifiées"
+        page = source.get('page') or "non spécifiées"
 
         block = f"""
-            Source {idx}
+            Chunk {idx} :
+            ID : {id}
             Fichier : {filename}
             Chapitre : {chapter}
             Section : {section}
             Sous-section : {subsection}
-            Pages: {pages}
+            Pages: {page}
             Contenu :
             {doc.strip()}
         """
@@ -344,12 +346,13 @@ def query_db_processing(
                         "items": {
                             "type": "object",
                             "properties": {
+                                "id": {"type": "integer"},
                                 "fichier": {"type": "string"},
                                 "chapitre": {"type": "string"},
                                 "section": {"type": "string"},
                                 "page": {"type": "integer"}
                             },
-                            "required": ["fichier", "chapitre", "section", "page"]
+                            "required": ["id", "fichier", "chapitre", "section", "page"]
                         }
                     }
                 },
@@ -369,14 +372,9 @@ def query_db_processing(
             deduplicated_sources = []
             for src in rag_result["sources"]:
                 if isinstance(src, dict):
-                    key = (
-                        str(src.get("fichier", "")).strip().lower(),
-                        str(src.get("chapitre", "")).strip().lower(),
-                        str(src.get("section", "")).strip().lower(),
-                        src.get("page")
-                    )
-                    if key not in seen_sources:
-                        seen_sources.add(key)
+                    src_id = src.get("id")
+                    if src_id not in seen_sources:
+                        seen_sources.add(src_id)
                         deduplicated_sources.append(src)
             rag_result["sources"] = deduplicated_sources
 

@@ -18,6 +18,7 @@ SCHEMA JSON REQUIS :
     "reponse": "Texte en Markdown adapté (paragraphes, puces ou tableaux avec des sauts de ligne \\n).",
     "sources": [
         {
+            "id": 123,
             "fichier": "nom_du_fichier.pdf",
             "chapitre": "Nom du chapitre",
             "section": "Nom de la section",

@@ -20,7 +20,7 @@ const SignInContainer = styled(Stack)(({ theme }: { theme: Theme }) => ({
     backgroundRepeat: 'no-repeat',
     ...theme.applyStyles('dark', {
       backgroundImage:
-        'radial-gradient(at 50% 50%, hsla(210, 100%, 16%, 0.5), hsl(220, 30%, 5%))',
+        'radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.04) 50%, #090d16 100%)',
     }),
   },
 }));
@@ -35,11 +35,14 @@ const Card = styled(MuiCard)(({ theme }: { theme: Theme }) => ({
   [theme.breakpoints.up('sm')]: {
     maxWidth: '450px',
   },
-  boxShadow:
-    'hsla(220, 30%, 5%, 0.05) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.05) 0px 15px 35px -5px',
+  borderRadius: '20px',
+  backgroundImage: 'none',
+  backgroundColor: 'rgba(15, 23, 42, 0.45)',
+  backdropFilter: 'blur(16px)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.35)',
   ...theme.applyStyles('dark', {
-    boxShadow:
-      'hsla(220, 30%, 5%, 0.5) 0px 5px 15px 0px, hsla(220, 25%, 10%, 0.08) 0px 15px 35px -5px',
+    boxShadow: '0 12px 40px 0 rgba(0, 0, 0, 0.55)',
   }),
 }));
 

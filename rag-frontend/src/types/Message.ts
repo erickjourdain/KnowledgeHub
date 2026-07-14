@@ -1,4 +1,5 @@
 export interface Source {
+  id: number
   fichier: string
   chapitre: string
   section: string

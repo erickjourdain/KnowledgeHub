@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from app.core.queue import ingestion_queue, redis_conn
 from app.config.database import get_db
 from app.jobs.ingestion import ingestion_job
-from app.models import User, RoleEnum, Document, JobIngestion
+from app.models import User, RoleEnum, Document, JobIngestion, DocumentChunk
 from app.schemas import (
     CollectionCreate,
     CollectionResponse, 
@@ -19,7 +19,8 @@ from app.schemas import (
     JobResponse,
     BackendResponse, 
     PaginatedResponse,
-    UsersInCollection
+    UsersInCollection,
+    ChunkResponse
 )
 from app.dependencies import get_current_user
 from app.utils.directory import get_temp_dir, get_knowledge_base_dir
@@ -471,3 +472,37 @@ def reindex_collection_or_document(
     except Exception as e:
         print(f"Error in reindex: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la réindexation")
+
+
+@router.get("/chunks/{chunk_id}", response_model=ChunkResponse)
+def get_chunk(
+    chunk_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Récupérer un chunk spécifique par son ID après vérification des droits d'accès
+    à la collection parente.
+    """
+    try:
+        # 1. Récupérer le chunk
+        chunk = db.query(DocumentChunk).filter(DocumentChunk.id == chunk_id).first()
+        if not chunk:
+            raise HTTPException(status_code=404, detail="Chunk non trouvé")
+
+        # 2. Récupérer le document parent pour obtenir collection_id
+        document = db.query(Document).filter(Document.id == chunk.document_id).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document associé au chunk non trouvé")
+
+        # 3. Vérifier les droits d'accès à la collection
+        collection = get_collection_without_relations(cast(int, document.collection_id), current_user, db)
+        if not collection:
+            raise HTTPException(status_code=403, detail="Accès interdit à la collection associée à ce chunk")
+
+        return chunk
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in get_chunk: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la récupération du chunk")
