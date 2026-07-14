@@ -69,7 +69,7 @@ def query_kb_job(
         
         # Créer un message avec la question, la réponse et les sources
         reponse = result.reponse
-        sources = result.sources
+        sources = [s.model_dump() for s in result.sources] if result.sources else []
         message=Message(
             conversation_id=conversation_id,
             sender_id=user.id,

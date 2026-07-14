@@ -34,11 +34,11 @@ def get_collection_without_relations(
         # Les gestionnaires ont accès aux collections qu'ils ont créées ou auxquelles ils sont associés
         elif user.role == RoleEnum.GESTIONNAIRE:
             collection = db.query(Collection).options(raiseload("*")) \
-                .filter(Collection.id == collection_id, (Collection.creator_id == user.id) | Collection.users.any(id=user.id)).first()    
+                .filter(Collection.id == collection_id, (Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)).first()    
         # Les utilisateurs ont accès aux collections auxquelles ils sont associés
         else:
             collection = db.query(Collection).options(raiseload("*")) \
-                .filter(Collection.users.any(id=user.id), Collection.id == collection_id).first()
+                .filter(Collection.authorized_users.any(id=user.id), Collection.id == collection_id).first()
             
         # Si la collection n'existe pas, on retourne None
         if not collection:
@@ -91,23 +91,23 @@ def get_collections_without_relations(
         elif user.role == RoleEnum.GESTIONNAIRE:
             if search:
                 collections = db.query(Collection).options(raiseload("*")) \
-                    .filter((Collection.creator_id == user.id) | Collection.users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
                     .filter(Collection.name.like(f'%{search}%')) \
                     .offset(offset).limit(limit).all()
             else:
                 collections = db.query(Collection).options(raiseload("*")) \
-                    .filter((Collection.creator_id == user.id) | Collection.users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
                     .offset(offset).limit(limit).all()
         # Les utilisateurs ont accès aux collections auxquelles ils sont associés
         else:
             if search:
                 collections = db.query(Collection).options(raiseload("*")) \
-                    .filter(Collection.users.any(id=user.id)) \
+                    .filter(Collection.authorized_users.any(id=user.id)) \
                     .filter(Collection.name.like(f'%{search}%')) \
                     .offset(offset).limit(limit).all()
             else:
                 collections = db.query(Collection).options(raiseload("*")) \
-                    .filter(Collection.users.any(id=user.id)) \
+                    .filter(Collection.authorized_users.any(id=user.id)) \
                     .offset(offset).limit(limit).all()
 
         # On prépare la réponse en ajoutant les compteurs de documents et d'utilisateurs à chaque collection
@@ -148,20 +148,20 @@ def get_nb_collections(db: Session, user: User, search: str | None = None) -> in
         elif user.role == RoleEnum.GESTIONNAIRE:
             if search:
                 return db.query(func.count(Collection.id)) \
-                    .filter((Collection.creator_id == user.id) | Collection.users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
                     .filter(Collection.name.like(f'%{search}%')).scalar()
             else:
                 return db.query(func.count(Collection.id)) \
-                    .filter((Collection.creator_id == user.id) | Collection.users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
                     .scalar()
         else:
             if search:
                 return db.query(func.count(Collection.id)) \
-                    .filter(Collection.users.any(id=user.id)) \
+                    .filter(Collection.authorized_users.any(id=user.id)) \
                     .filter(Collection.name.like(f'%{search}%')).scalar()
             else:
                 return db.query(func.count(Collection.id)) \
-                    .filter(Collection.users.any(id=user.id)).scalar()
+                    .filter(Collection.authorized_users.any(id=user.id)).scalar()
     
     except Exception as e:
         print(f"Error in get_nb_collections: {e}")

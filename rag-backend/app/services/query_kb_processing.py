@@ -1,3 +1,5 @@
+from accelerate import scheduler
+from PIL import ExifTags
 from collections import defaultdict
 import heapq
 from typing import cast, Any
@@ -366,17 +368,30 @@ def query_db_processing(
         if "reponse" in rag_result and isinstance(rag_result["reponse"], str):
             rag_result["reponse"] = rag_result["reponse"].replace("\\n", "\n")
 
-        # Dédoublonnement des sources générées par le LLM
+        # Reconstruct the sources list using the database chunks and avoid duplicate sources
+        chunks_map = {chunk.id: chunk for chunk in chunks}
+        formatted_sources = []
         if "sources" in rag_result and isinstance(rag_result["sources"], list):
             seen_sources = set()
-            deduplicated_sources = []
             for src in rag_result["sources"]:
                 if isinstance(src, dict):
                     src_id = src.get("id")
-                    if src_id not in seen_sources:
+                    if src_id not in seen_sources and src_id is not None:
                         seen_sources.add(src_id)
-                        deduplicated_sources.append(src)
-            rag_result["sources"] = deduplicated_sources
+                        chunk = chunks_map.get(src_id)
+                        if chunk:
+                            formatted_sources.append({
+                                "id": chunk.id,
+                                "fichier": chunk.document.title,
+                                "chapitre": chunk.chapter or "chapitre non précisé",
+                                "section": chunk.section or "section non précisée",
+                                "sous_section": chunk.subsection or "sous-section non précisée",
+                                "pages": str(chunk.page) if chunk.page is not None else "non spécifiée",
+                                "contenu": chunk.chunk_text
+                            })
+                        else:
+                            print(f"Warning: Source chunk with id {src_id} not found in retrieved chunks.")
+            rag_result["sources"] = formatted_sources
 
         if conversation_id is None:
             print("Génération du titre de la conversation")

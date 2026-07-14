@@ -4,7 +4,7 @@ from uuid import uuid4
 from rq import get_current_job
 
 from app.models.collection import Collection
-from app.schemas import RagResponse
+from app.schemas import RagResponse, Source
 from app.utils.redis import publish_progress
 
 
@@ -97,12 +97,15 @@ def query_test_processing(
             query=query,
             title=title,
             reponse=f"réponse {uuid4()}",
-            sources=[{
-                "fichier": "fichier_1",
-                "chapitre": "chapitre_1",
-                "section": "section_1",
-                "page": "page_1"
-            }]
+            sources=[Source(
+                id=1,
+                fichier="fichier_1",
+                chapitre="chapitre_1",
+                section="section_1",
+                sous_section="sous_section_1",
+                pages="page_1",
+                contenu="contenu_1"
+            )]
         )
         
     except Exception as e:
