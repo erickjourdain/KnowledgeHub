@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
+import urllib.parse
+import random
 from app.config.database import get_db
 from app.models import User, RoleEnum
 from app.schemas import (
@@ -18,6 +20,36 @@ from app.utils.security import hash_password, verify_password, create_access_tok
 from app.dependencies import get_current_user
 
 router = APIRouter()
+
+
+def generate_default_avatar(username: str) -> str:
+    colors = [
+        "#6366f1",  # Indigo
+        "#a855f7",  # Violet
+        "#ec4899",  # Pink
+        "#3b82f6",  # Blue
+        "#10b981",  # Green
+        "#f59e0b",  # Amber
+        "#ef4444",  # Red
+        "#06b6d4"   # Cyan
+    ]
+    bg = random.choice(colors)
+    label = username[0].upper() if username else "U"
+    
+    bg_clean = bg.lstrip('#')
+    num = int(bg_clean, 16)
+    r = min(255, max(0, (num >> 16) + int(255 * 0.2)))
+    g = min(255, max(0, ((num >> 8) & 0x00FF) + int(255 * 0.2)))
+    b = min(255, max(0, (num & 0x0000FF) + int(255 * 0.2)))
+    end_color = f"#{r:02x}{g:02x}{b:02x}"
+    
+    grad_id = f"grad_{bg_clean}"
+    gradient_defs = f'<defs><linearGradient id="{grad_id}" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="{bg}"/><stop offset="100%" stop-color="{end_color}"/></linearGradient></defs>'
+    fill_value = f"url(#{grad_id})"
+    
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">{gradient_defs}<rect width="96" height="96" rx="28" fill="{fill_value}"/><text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" fill="#ffffff">{label}</text></svg>'
+    
+    return f"data:image/svg+xml;utf8,{urllib.parse.quote(svg)}"
 
 
 @router.get("", response_model=PaginatedResponse[UserResponse])
@@ -61,7 +93,8 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         hashed_password=hash_password(user.password),
         is_active=False,
-        role=RoleEnum.USER
+        role=RoleEnum.USER,
+        icon=generate_default_avatar(user.username)
     )
     db.add(new_user)
     db.commit()

@@ -110,14 +110,7 @@ def update_conversation(
             user=current_user,
             db=db
         ) 
-        return ConversationResponse(
-            id=conversation.id,
-            uuid=conversation.uuid,
-            title=conversation.title,
-            collection_id=conversation.collection_id,
-            creator_id=conversation.creator_id,
-            created_at=conversation.created_at
-        )
+        return ConversationResponse.model_validate(conversation)
 
     except NoResultFound:
         raise HTTPException(status_code=404, detail="La conversation n'existe pas")

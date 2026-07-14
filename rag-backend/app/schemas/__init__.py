@@ -113,6 +113,7 @@ class UserResponse(UserBase):
     id: int
     is_active: bool
     role: RoleEnum
+    icon: Optional[str] = None
     created_at: datetime
 
     class Config:
@@ -123,6 +124,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
     role: Optional[RoleEnum] = None
+    icon: Optional[str] = None
 
 class PasswordUpdate(BaseModel):
     username: str
@@ -234,6 +236,7 @@ class ConversationResponse(BaseModel):
     creator_id: int
     title: str
     created_at: datetime
+    creator: Optional[UserResponse] = None
 
     class Config:
         from_attributes = True
@@ -298,7 +301,7 @@ class MessageResponse(BaseModel):
     id: int
     uuid: str
     conversation_id: int
-    sender_id: int
+    sender: UserResponse
     questions: str
     answer: Optional[str] = None
     sources: Optional[List[dict]] = None

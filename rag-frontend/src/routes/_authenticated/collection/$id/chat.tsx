@@ -153,7 +153,7 @@ function RouteComponent() {
   }, [models, selectedModel]);
   const [conversationState, setConversationState] =
     useAtom(conversationAtom);
-  const [meChatUser] = useState<ChatUser>(createAvatar(auth.user, '#1976d2'));
+  const meChatUser = useMemo<ChatUser>(() => createAvatar(auth.user, '#1976d2'), [auth.user]);
   const [assistantChatUser] = useState<ChatUser>(createAvatar('assistant'));
   const [modelPagination, _setModelPagination] = useState<ModelPagination>({
     page: 1,
@@ -239,8 +239,8 @@ function RouteComponent() {
           id: conversation.uuid,
           title: conversation.title,
           lastMessageAt: conversation.created_at,
-          avatarUrl: createAvatarDataUrl(
-            auth.user?.username[0].toUpperCase() || 'M',
+          avatarUrl: conversation.creator?.icon || createAvatarDataUrl(
+            conversation.creator?.username[0].toUpperCase() || 'M',
             '#1976d2'
           )
         })
@@ -275,7 +275,7 @@ function RouteComponent() {
               ],
               createdAt: dayjs(newMessage.created_at).toISOString(),
               status: 'read',
-              author: meChatUser
+              author: createAvatar(newMessage.sender, '#1976d2')
             });
             conversationMessages.push({
               id: `assitant-${newMessage.uuid}`,

@@ -27,6 +27,9 @@ class Conversation(Base):
         "Collection",
         back_populates="conversations"
     )
+    creator = relationship(
+        "User"
+    )
 
 
 class Message(Base):
@@ -45,4 +48,7 @@ class Message(Base):
     conversation = relationship(
         "Conversation",
         back_populates="messages"
+    )
+    sender = relationship(
+        "User"
     )

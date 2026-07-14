@@ -14,6 +14,7 @@ export interface User {
   email: string;
   role: UserRole;
   is_active: boolean;
+  icon?: string;
 }
 
 export interface TokenResponse {
@@ -34,6 +35,7 @@ export interface UserUpdate {
   old_password?: string;
   password?: string;
   is_active?: boolean;
+  icon?: string;
 }
 
 export interface UserAuth extends User {

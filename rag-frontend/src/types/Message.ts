@@ -1,3 +1,5 @@
+import type { User } from './User';
+
 export interface Source {
   id: number
   fichier: string
@@ -9,7 +11,7 @@ export interface Message {
   id: number
   uuid: string
   conversation_id: number
-  sender_id: number
+  sender: User
   questions: string
   answer: string | null
   sources: Source[] | null

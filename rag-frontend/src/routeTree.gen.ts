@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedAuthAdminRouteImport } from './routes/_authenticated/_authAdmin'
 import { Route as AuthenticatedCollectionIdRouteImport } from './routes/_authenticated/collection/$id'
 import { Route as AuthenticatedCollectionIdDocumentsRouteImport } from './routes/_authenticated/collection/$id/documents'
@@ -51,6 +52,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAuthAdminRoute = AuthenticatedAuthAdminRouteImport.update({
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/change-password': typeof ChangePasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
   '/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
   '/collection/$id/documents': typeof AuthenticatedCollectionIdDocumentsRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/': typeof AuthenticatedIndexRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
   '/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
   '/collection/$id/documents': typeof AuthenticatedCollectionIdDocumentsRoute
@@ -181,6 +189,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/_authenticated/_authAdmin': typeof AuthenticatedAuthAdminRouteWithChildren
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
   '/_authenticated/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
@@ -203,6 +212,7 @@ export interface FileRouteTypes {
     | '/change-password'
     | '/login'
     | '/register'
+    | '/profile'
     | '/collection/$id'
     | '/collection/$id/chat'
     | '/collection/$id/documents'
@@ -222,6 +232,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/'
+    | '/profile'
     | '/collection/$id'
     | '/collection/$id/chat'
     | '/collection/$id/documents'
@@ -242,6 +253,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/_authenticated/_authAdmin'
+    | '/_authenticated/profile'
     | '/_authenticated/'
     | '/_authenticated/collection/$id'
     | '/_authenticated/collection/$id/chat'
@@ -300,6 +312,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/_authAdmin': {
@@ -476,12 +495,14 @@ const AuthenticatedCollectionIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAuthAdminRoute: typeof AuthenticatedAuthAdminRouteWithChildren
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedCollectionIdRoute: typeof AuthenticatedCollectionIdRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuthAdminRoute: AuthenticatedAuthAdminRouteWithChildren,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedCollectionIdRoute: AuthenticatedCollectionIdRouteWithChildren,
 }

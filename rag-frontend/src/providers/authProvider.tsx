@@ -57,6 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [setToken]);
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const updatedUser: User = await apiAutoLogin();
+      setUser(updatedUser);
+      return updatedUser;
+    } catch (error) {
+      console.error("Error refreshing user profile:", error);
+      throw error;
+    }
+  }, []);
+
   useEffect(() => {
     let initialToken = "";
     try {
@@ -100,7 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, token, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

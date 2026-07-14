@@ -65,7 +65,7 @@ export function createAvatar(
   return {
     id: String(user.id),
     displayName: user.username,
-    avatarUrl: createAvatarDataUrl(user.username[0].toUpperCase(), color),
+    avatarUrl: user.icon,
     isOnline: true,
     role: 'user',
   }

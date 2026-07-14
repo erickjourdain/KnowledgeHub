@@ -1,6 +1,6 @@
 from sqlalchemy import func
 from sqlalchemy.exc import NoResultFound
-from sqlalchemy.orm import Session, raiseload
+from sqlalchemy.orm import Session, raiseload, joinedload
 
 from app.models import Conversation, Message, User
 from app.schemas import ConversationUpdate
@@ -24,7 +24,7 @@ def get_conversation_messages(
         if conversation.creator_id != user.id:
             raise PermissionError("Vous ne disposez pas des droits d'accès à cette conversation")
         
-        return db.query(Message).options(raiseload("*")) \
+        return db.query(Message).options(joinedload(Message.sender), raiseload("*")) \
             .filter(Message.conversation_id == conversation.id) \
             .order_by(Message.created_at) \
             .offset(offset).limit(limit).all()
@@ -69,14 +69,14 @@ def get_collection_conversations(
     """Récupération des conversations"""
     try:
         if (search):
-            return db.query(Conversation).options(raiseload("*")) \
+            return db.query(Conversation).options(joinedload(Conversation.creator), raiseload("*")) \
                 .filter(Conversation.name.like(f'%{search}%')) \
                 .filter(Conversation.creator_id == user.id) \
                 .filter(Conversation.collection_id == collection_id) \
                 .order_by(Conversation.created_at.desc()) \
                 .offset(offset).limit(limit).all()
         else:
-            return db.query(Conversation).options(raiseload("*")) \
+            return db.query(Conversation).options(joinedload(Conversation.creator), raiseload("*")) \
                 .filter(Conversation.creator_id == user.id) \
                 .filter(Conversation.collection_id == collection_id) \
                 .order_by(Conversation.created_at.desc()) \
@@ -119,7 +119,7 @@ def get_conversation_by_uuid(
 ) -> Conversation:
     """Récupération d'une conversation via son uuid"""
     try:
-        conversation = db.query(Conversation).options(raiseload("*")) \
+        conversation = db.query(Conversation).options(joinedload(Conversation.creator), raiseload("*")) \
             .filter(Conversation.uuid == conversation_uuid).first()
         
         if not conversation:
@@ -142,7 +142,7 @@ def get_conversation_by_id(
 ) -> Conversation:
     """Récupération d'une conversation via son id"""
     try:
-        conversation = db.query(Conversation).options(raiseload("*")) \
+        conversation = db.query(Conversation).options(joinedload(Conversation.creator), raiseload("*")) \
             .filter(Conversation.id == conversation_id).first()
         
         if not conversation:
@@ -166,7 +166,7 @@ def put_conversation_by_uuid(
 ) -> Conversation:
     """Modification d'une conversation via son uuid"""
     try:
-        conversation = db.query(Conversation).options(raiseload("*")) \
+        conversation = db.query(Conversation).options(joinedload(Conversation.creator), raiseload("*")) \
             .filter(Conversation.uuid == conversation_uuid).first()
         
         if not conversation:

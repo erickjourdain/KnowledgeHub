@@ -25,6 +25,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import type { AuthState } from "@appTypes/AuthState";
 import { Route } from "../routes/_authenticated";
@@ -63,6 +64,11 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
   const handleLogout = () => {
     handleCloseMenu();
     auth.logout();
+  };
+
+  const handleProfileRoute = () => {
+    handleCloseMenu();
+    navigate({ to: '/profile' });
   };
 
   // Détection des routes actives
@@ -314,6 +320,7 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
           }}
         >
           <Avatar 
+            src={auth.user?.icon || undefined}
             sx={{ 
               width: 32, 
               height: 32, 
@@ -322,7 +329,7 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
               fontWeight: 'bold'
             }}
           >
-            {auth.user?.username[0].toUpperCase() || 'U'}
+            {!auth.user?.icon && (auth.user?.username[0].toUpperCase() || 'U')}
           </Avatar>
           
           {!isCollapsed && (
@@ -403,6 +410,21 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
             </Typography>
           </Box>
         )}
+        <MenuItem 
+          onClick={handleProfileRoute}
+          sx={{ 
+            color: 'text.primary',
+            gap: 1.5,
+            fontSize: '0.85rem',
+            py: 1,
+            '&:hover': {
+              backgroundColor: 'rgba(255, 255, 255, 0.05)'
+            }
+          }}
+        >
+          <AccountCircleIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+          Mon profil
+        </MenuItem>
         <MenuItem 
           onClick={handleLogout}
           sx={{ 
