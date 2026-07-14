@@ -25,7 +25,7 @@ import { EmptyCollectionsState } from '@components/EmptyCollectionsState';
 import { fetchCollections } from '@api/collections';
 import dayjs from 'dayjs';
 import { isAdmin, isGestionnaire } from '@utils/security';
-import type { AuthState } from '@appTypes/AuthState';
+import { useAuth } from '../../providers/authProvider';
 
 type RouteSearch = {
   page?: number;
@@ -53,7 +53,7 @@ export const Route = createFileRoute("/_authenticated/")({
 
 function Index() {
   const { data, count } = Route.useLoaderData();
-  const { auth }: { auth: AuthState } = Route.useRouteContext();
+  const auth = useAuth();
   const { search: searchParam } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
   const [page, setPage] = useState(1);

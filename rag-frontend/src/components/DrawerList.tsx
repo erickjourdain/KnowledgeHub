@@ -27,8 +27,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate, useLocation } from "@tanstack/react-router";
-import type { AuthState } from "@appTypes/AuthState";
-import { Route } from "../routes/_authenticated";
+import { useAuth } from "../providers/authProvider";
 import { isAdmin, isCreator, isGestionnaire } from "@utils/security";
 import { collectionAtom } from "@store/collectionStore";
 import { jobIngestionIdsAtom } from "@store/jobIngestionStore";
@@ -42,7 +41,7 @@ interface DrawerListProps {
 export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { auth }: { auth: AuthState } = Route.useRouteContext();
+  const auth = useAuth();
   const collection = useAtomValue(collectionAtom);
 
   const ingestionIds = useAtomValue(jobIngestionIdsAtom);

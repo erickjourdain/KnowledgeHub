@@ -28,7 +28,7 @@ import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { jobQueryAtom } from '@store/jobQueryStore';
 import { conversationAtom } from '@store/conversationStore';
 import { createAvatar, createAvatarDataUrl, createEmptyConversation } from '@utils/chat';
-import type { AuthState } from '@appTypes/AuthState';
+import { useAuth } from '../../../../providers/authProvider';
 import type { RagQuery } from '@appTypes/Query';
 import type { Message } from '@appTypes/Message';
 import SourceDocumentCard from '@components/SourceDocumentCard';
@@ -46,7 +46,7 @@ export const Route = createFileRoute('/_authenticated/collection/$id/chat')({
 });
 
 function RouteComponent() {
-  const { auth }: { auth: AuthState } = Route.useRouteContext();
+  const auth = useAuth();
   const queryClient = useQueryClient();
   const { id } = Route.useParams();
   const setJobId = useSetAtom(jobQueryAtom);
