@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models.collection import Collection
 from app.models import DocumentChunk, Document
-from app.config.config import PROMPTS_DIR
+from app.config.config import PROMPTS_DIR, RERANKER_MODEL, RERANKER_THRESHOLD
 from app.config.ollama import get_ollama_client
 from app.schemas import RagResponse
 from app.utils.redis import publish_progress
@@ -135,8 +135,8 @@ def get_reranker():
         import torch
         from sentence_transformers import CrossEncoder
         device = "mps" if torch.backends.mps.is_available() else ("cuda" if torch.cuda.is_available() else "cpu")
-        print(f"Chargement du Reranker BGE sur le périphérique : {device}...")
-        _reranker_model = CrossEncoder("BAAI/bge-reranker-v2-m3", device=device)
+        print(f"Chargement du Reranker {RERANKER_MODEL} sur le périphérique : {device}...")
+        _reranker_model = CrossEncoder(RERANKER_MODEL, device=device)
     return _reranker_model
 
 
@@ -146,7 +146,7 @@ def rerank_chunks_batch(
     model: str
 ) -> list[DocumentChunk]:
     """
-    Reranke un lot de chunks localement en utilisant le modèle Cross-Encoder BAAI/bge-reranker-v2-m3.
+    Reranke un lot de chunks localement en utilisant le modèle Cross-Encoder configuré.
     """
     if not chunks:
         return []
@@ -163,14 +163,14 @@ def rerank_chunks_batch(
         # Associer les scores aux chunks et les trier par score décroissant
         scored_chunks = sorted(zip(chunks, scores), key=lambda x: float(x[1]), reverse=True)
         
-        # Filtrer avec un seuil de pertinence (seuil de -2.0 typique pour BGE Reranker v2)
-        relevant_chunks = [chunk for chunk, score in scored_chunks if float(score) > -2.0]
+        # Filtrer avec un seuil de pertinence (seuil configuré, ex: 0.0 pour distilcamembert)
+        relevant_chunks = [chunk for chunk, score in scored_chunks if float(score) > RERANKER_THRESHOLD]
         
         # Si aucun chunk ne dépasse le seuil, on garde au moins le premier (le plus pertinent) pour éviter les contextes vides
         if not relevant_chunks and scored_chunks:
             relevant_chunks = [scored_chunks[0][0]]
             
-        print(f"Reranking local (BGE) terminé : {len(relevant_chunks)} chunks conservés sur {len(chunks)}.")
+        print(f"Reranking local ({RERANKER_MODEL}) terminé : {len(relevant_chunks)} chunks conservés sur {len(chunks)}.")
         return relevant_chunks
 
     except Exception as e:

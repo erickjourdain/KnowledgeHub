@@ -57,6 +57,14 @@ OLLAMA_URL = f"{OLLAMA_HOST}:{OLLAMA_PORT}"
 OLLAMA_EMBEDDING_MODEL = os.getenv("OLLAMA_EMBEDDING_MODEL", "embeddinggemma")
 OLLAMA_QUERY_MODEL = os.getenv("OLLAMA_QUERY_MODEL", "gemma3:4b")
 
+# Configuration Reranker
+RERANKER_MODEL = os.getenv("RERANKER_MODEL", "antoinelouis/crossencoder-distilcamembert-mmarcoFR")
+RERANKER_THRESHOLD = float(os.getenv("RERANKER_THRESHOLD", "0.0"))
+
+# Configuration Chunking
+CHUNK_MAX_TOKENS = int(os.getenv("CHUNK_MAX_TOKENS", "512"))
+EMBEDDING_TOKENIZER_MODEL = os.getenv("EMBEDDING_TOKENIZER_MODEL", "nomic-ai/nomic-embed-text-v1")
+
 # Affichage de la configuration (sans les valeurs sensibles)
 print("=== Configuration de l'application ===")
 print(f"  App Name: {APP_NAME}")
@@ -89,3 +97,11 @@ print("=== Configuration d'Ollama ===")
 print(f"  Ollama URL: {OLLAMA_URL}")
 print(f"  Embedding Model: {OLLAMA_EMBEDDING_MODEL}")
 print(f"  Query Model: {OLLAMA_QUERY_MODEL}")
+
+print("=== Configuration du Reranker ===")
+print(f"  Reranker Model: {RERANKER_MODEL}")
+print(f"  Reranker Threshold: {RERANKER_THRESHOLD}")
+
+print("=== Configuration du Chunking ===")
+print(f"  Max Tokens: {CHUNK_MAX_TOKENS}")
+print(f"  Tokenizer Model: {EMBEDDING_TOKENIZER_MODEL}")

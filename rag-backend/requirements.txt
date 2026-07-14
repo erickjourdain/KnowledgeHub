@@ -2,6 +2,7 @@ fastapi
 uvicorn
 uvicorn[standard]
 docling
+easyocr
 sqlalchemy
 pgvector
 psycopg2-binary

@@ -28,6 +28,31 @@ interface WSContextType {
 
 const WSContext = createContext<WSContextType | undefined>(undefined);
 
+function getWebSocketUrl(token: string): string {
+  const apiUrl = import.meta.env.VITE_API_URL || "";
+  const loc = window.location;
+  const wsProtocol = loc.protocol === "https:" ? "wss:" : "ws:";
+
+  // Check if VITE_API_URL is relative (starts with '/' and NOT '//', or is empty)
+  if (!apiUrl || (apiUrl.startsWith("/") && !apiUrl.startsWith("//"))) {
+    return `${wsProtocol}//${loc.host}/ws/jobs?token=${token}`;
+  }
+
+  // If VITE_API_URL is absolute (e.g. http://localhost:8000/api, //localhost:8000/api)
+  const cleanUrl = apiUrl.replace(/\/api\/?$/, "");
+
+  if (cleanUrl.startsWith("http://")) {
+    return cleanUrl.replace("http://", "ws://") + `/ws/jobs?token=${token}`;
+  } else if (cleanUrl.startsWith("https://")) {
+    return cleanUrl.replace("https://", "wss://") + `/ws/jobs?token=${token}`;
+  } else if (cleanUrl.startsWith("//")) {
+    return `${wsProtocol}${cleanUrl}/ws/jobs?token=${token}`;
+  }
+
+  // Fallback
+  return `${wsProtocol}//${cleanUrl}/ws/jobs?token=${token}`;
+}
+
 export function WebSocketProvider({
   children,
 }: {
@@ -64,7 +89,7 @@ export function WebSocketProvider({
       return;
     }
 
-    const wsUrl = `ws:${import.meta.env.VITE_API_URL?.replace('/api', '')}/ws/jobs?token=${token}`;
+    const wsUrl = getWebSocketUrl(token);
     console.log("WebSocket: attempting to connect to", wsUrl);
 
     const ws = new WebSocket(wsUrl);
