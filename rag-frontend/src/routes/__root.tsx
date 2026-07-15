@@ -3,15 +3,18 @@ import {
   Box,
   CssBaseline,
   Toolbar,
-  Typography
+  Typography,
+  IconButton,
+  Tooltip
 } from "@mui/material";
-import { createRootRouteWithContext, Outlet } from "@tanstack/react-router";
+import { createRootRouteWithContext, Outlet, Link } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'; 
 import logoUrl from "../assets/logo.png"
 import { type MyRouterContext } from "../router";
 import IndexingIndicator from "@components/IndexingIndicator";
 import ErrorPage from "@components/ErrorPage";
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -68,6 +71,22 @@ function RootLayout() {
             RAG-AI
           </Typography>
           <IndexingIndicator />
+          <Tooltip title="Fonctionnement & Limites RAG">
+            <IconButton 
+              component={Link} 
+              to="/info" 
+              sx={{ 
+                color: 'text.secondary', 
+                ml: 1.5, 
+                '&:hover': { 
+                  color: 'primary.light',
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)'
+                } 
+              }}
+            >
+              <HelpOutlineIcon fontSize="medium" />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Outlet />
