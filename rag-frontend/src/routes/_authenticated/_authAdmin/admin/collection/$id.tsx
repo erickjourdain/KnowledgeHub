@@ -1,4 +1,4 @@
-import type React from 'react';
+import React from 'react';
 import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
 import {
   Container,
@@ -16,23 +16,37 @@ import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
 import DeleteIcon from '@mui/icons-material/Delete';
-import ErrorAccess from '@components/ErrorAccess';
+import ErrorPage from '@components/ErrorPage';
 import { fetchCollection } from '@api/collections';
 import { isAdmin, isCreator } from '@utils/security';
+import { AppError } from '@utils/errors';
 
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/collection/$id',
 )({
   loader: async ({ params: { id }, context: { auth, queryClient } }) => {
-    const collection = await queryClient.ensureQueryData({
-      queryKey: ['collections', String(id)],
-      queryFn: () => fetchCollection(id)
-    })
-    if (isAdmin(auth.user) || isCreator(auth.user, collection.creator_id))
-      return collection;
-    else throw new Error
+    try {
+      const collection = await queryClient.ensureQueryData({
+        queryKey: ['collections', String(id)],
+        queryFn: () => fetchCollection(id)
+      })
+      if (isAdmin(auth.user) || isCreator(auth.user, collection.creator_id)) {
+        return collection;
+      } else {
+        throw new AppError("Vous n'avez pas l'autorisation d'administrer cette collection.", 403);
+      }
+    } catch (err: any) {
+      if (err instanceof AppError) {
+        throw err;
+      }
+      const status = err?.response?.status || 500;
+      const message = status === 404 
+        ? "La collection d'administration demandée n'existe pas." 
+        : (err.message || "Une erreur est survenue lors de la récupération de la collection.");
+      throw new AppError(message, status);
+    }
   },
-  errorComponent: ErrorAccess,
+  errorComponent: ({ error, reset }) => <ErrorPage error={error} reset={reset} />,
   component: RouteComponent,
 })
 

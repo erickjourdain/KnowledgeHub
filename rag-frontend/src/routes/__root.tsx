@@ -11,10 +11,12 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import logoUrl from "../assets/logo.png"
 import { type MyRouterContext } from "../router";
 import IndexingIndicator from "@components/IndexingIndicator";
+import ErrorPage from "@components/ErrorPage";
 
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: RootLayout
+  component: RootLayout,
+  errorComponent: ({ error, reset }) => <ErrorPage error={error} reset={reset} />
 });
 
 function RootLayout() {

@@ -19,10 +19,19 @@ import { fetchUser, updateUser } from '@api/users';
 import { USER_ROLES, type UserRole } from '@appTypes/User';
 import { useCallback, useState, useEffect } from 'react';
 import ConfirmationMessage from '@components/ConfirmationMessage';
+import { isAdmin } from '@utils/security';
+import { AppError } from '@utils/errors';
+import ErrorPage from '@components/ErrorPage';
 
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/users/$id',
 )({
+  beforeLoad: ({ context: { auth } }) => {
+    if (!isAdmin(auth.user)) {
+      throw new AppError("Accès non autorisé, cette page est réservée aux administrateurs.", 403);
+    }
+  },
+  errorComponent: ({ error, reset }) => <ErrorPage error={error} reset={reset} />,
   loader: async ({ params: { id }, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
       queryKey: ['users', { id }],

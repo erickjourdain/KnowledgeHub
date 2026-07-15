@@ -7,6 +7,9 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Box, Divider, Grid, IconButton, Typography } from '@mui/material';
+import { isAdmin } from '@utils/security';
+import { AppError } from '@utils/errors';
+import ErrorPage from '@components/ErrorPage';
 
 type RouteSearch = {
   page?: number;
@@ -17,6 +20,12 @@ type RouteSearch = {
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/users/'
 )({
+  beforeLoad: ({ context: { auth } }) => {
+    if (!isAdmin(auth.user)) {
+      throw new AppError("Accès non autorisé, cette page est réservée aux administrateurs.", 403);
+    }
+  },
+  errorComponent: ({ error, reset }) => <ErrorPage error={error} reset={reset} />,
   validateSearch: (search: RouteSearch) => {
     return {
       page: search.page ? Number(search.page) : 1,
