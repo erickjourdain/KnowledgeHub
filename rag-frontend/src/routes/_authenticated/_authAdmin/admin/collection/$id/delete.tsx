@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { createFileRoute, useLoaderData, useNavigate } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { Box, Button, Divider, Grid, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Paper } from '@mui/material';
+import { Box, Button, Grid, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Paper } from '@mui/material';
 import ConfirmationMessage from '@components/ConfirmationMessage';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import AdminPageHeader from '@components/AdminPageHeader';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { deleteCollection } from '@api/collections';
 import { useAtomValue } from 'jotai';
@@ -62,10 +63,10 @@ function RouteComponent() {
   const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
   return <Grid size={8} pt={2}>
-    <Typography variant='h6' display="flex" alignItems="center" gap={1}>
-      <DeleteIcon color="warning" /> Suppression de la collection
-    </Typography>
-    <Divider sx={{ mb: 2 }} />
+    <AdminPageHeader 
+      title="Supprimer la collection" 
+      icon={<DeleteIcon />} 
+    />
     <Paper
       variant="outlined"
       sx={{

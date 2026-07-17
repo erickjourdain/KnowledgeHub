@@ -4,7 +4,6 @@ import { useAtom, useSetAtom, useAtomValue } from 'jotai';
 import {
   Box,
   Button,
-  Divider,
   Grid,
   Typography,
   Dialog,
@@ -20,6 +19,7 @@ import {
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { reindexCollection } from '@api/collections';
+import AdminPageHeader from '@components/AdminPageHeader';
 import type { JobInfoStatut } from '@appTypes/Job';
 import {
   jobReindexIdsAtom,
@@ -85,10 +85,10 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
-        <AutorenewIcon color="primary" /> Réindexation de la collection
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <AdminPageHeader 
+        title="Réindexer" 
+        icon={<AutorenewIcon />} 
+      />
 
       <Paper
         variant="outlined"

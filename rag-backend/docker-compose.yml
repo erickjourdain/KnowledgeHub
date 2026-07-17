@@ -54,6 +54,7 @@ services:
     volumes:
       - ${HOST_STORAGE_PATH:-./knowledge_base}:/app/knowledge_base
       - temp_files:/app/temp
+      - hf_cache:/root/.cache/huggingface
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
@@ -75,6 +76,7 @@ services:
     volumes:
       - ${HOST_STORAGE_PATH:-./knowledge_base}:/app/knowledge_base
       - temp_files:/app/temp
+      - hf_cache:/root/.cache/huggingface
     extra_hosts:
       - "host.docker.internal:host-gateway"
     deploy:
@@ -86,3 +88,4 @@ volumes:
   postgres_data:
   redis_data:
   temp_files:
+  hf_cache:

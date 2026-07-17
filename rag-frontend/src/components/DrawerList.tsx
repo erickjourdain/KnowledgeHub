@@ -17,7 +17,7 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import ArticleIcon from '@mui/icons-material/Article';
+import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import ChatIcon from '@mui/icons-material/Chat';
 import SettingsIcon from '@mui/icons-material/Settings';
 import GroupIcon from '@mui/icons-material/Group';
@@ -223,7 +223,7 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
               )}
 
               {renderItem("Chat", <ChatIcon />, handleChat, isChatActive)}
-              {renderItem("Document", <ArticleIcon />, handleDocument, isDocumentsActive)}
+              {renderItem("Recherche avancée", <ManageSearchIcon />, handleDocument, isDocumentsActive)}
               
               {(isAdmin(auth.user) || isCreator(auth.user, collection.creator_id)) &&
                 renderItem("Admin", <SettingsIcon />, handleAdmin, isAdminActive)

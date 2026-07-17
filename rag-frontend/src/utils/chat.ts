@@ -1,5 +1,6 @@
-import type { ChatConversation, ChatUser } from '@mui/x-chat/headless';
+import type { ChatConversation, ChatUser, ChatMessagePart } from '@mui/x-chat/headless';
 import type { User } from '@appTypes/User';
+import type { Message } from '@appTypes/Message';
 import logoUrl from '../assets/logo.png';
 
 function adjustColor(hex: string, percent: number): string {
@@ -81,4 +82,24 @@ export function createEmptyConversation(): ChatConversation {
   }
 
   return conversation;
+}
+
+export function defineMessageParts(message: Message): ChatMessagePart[] {
+  const messageParts: ChatMessagePart[] = [];
+  messageParts.push(
+    { type: 'text', text: message.answer || 'aucune réponse' }
+  );
+  if (message.sources) {
+    message.sources.forEach(source => {
+      messageParts.push(
+        {
+          type: 'source-document',
+          sourceId: source.id.toString(),
+          title: source.fichier,
+          text: `${source.chapitre} - ${source.section}`
+        } as any
+      )
+    })
+  }
+  return messageParts;
 }

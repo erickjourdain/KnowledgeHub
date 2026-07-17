@@ -14,7 +14,9 @@ def query_kb_job(
     collection_id: int,
     conversation_id: int | None,
     top_k: int,
-    user_id: int
+    user_id: int,
+    document_ids: list[int] | None = None,
+    exclude_document_ids: list[int] | None = None,
 ):
     """
     Job RQ exécuté par le worker pour la recherche dans la base de connaissances
@@ -49,7 +51,9 @@ def query_kb_job(
             conversation_id=conversation_id,
             model=model,
             top_k=top_k,
-            db=db
+            db=db,
+            document_ids=document_ids,
+            exclude_document_ids=exclude_document_ids,
         )
 
         # Créer une nouvelle conversation si conversation_id n'est pas fourni
@@ -97,9 +101,22 @@ def query_kb_job(
     except Exception as e:
         # Mettre à jour le job avec l'erreur
         if job_query_kb is not None:
-            job_query_kb.status = job.get_status()
+            job_query_kb.status = "failed"
             job_query_kb.error = str(e)
             db.commit()
+        
+        try:
+            publish_progress(
+                job.id,
+                type="query",
+                status="failed",
+                step="error",
+                progress=100,
+                message=f"Erreur: {str(e)}"
+            )
+        except Exception as pe:
+            print(f"Erreur lors de la publication de la progression d'erreur: {pe}")
+            
         raise e
 
     finally:

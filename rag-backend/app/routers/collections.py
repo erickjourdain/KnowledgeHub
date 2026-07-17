@@ -118,6 +118,7 @@ def get_collection_documents(
     collection_id: int,
     skip: int = 0,
     limit: int = 20,
+    search: str | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -128,8 +129,8 @@ def get_collection_documents(
             raise HTTPException(status_code=404, detail="Collection non trouvée")
         
         return PaginatedResponse(
-            data=get_documents_by_collection_without_relations(collection_id, db, skip, limit),
-            count=get_documents_count_by_collection(collection_id, db)
+            data=get_documents_by_collection_without_relations(collection_id, db, skip, limit, search),
+            count=get_documents_count_by_collection(collection_id, db, search)
         )
         
     except Exception as e:

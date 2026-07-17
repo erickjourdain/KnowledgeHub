@@ -59,7 +59,9 @@ def query_rag(
             collection_id=collection.id,
             conversation_id=conversation.id if conversation else None,
             top_k=top_k,
-            user_id=current_user.id
+            user_id=current_user.id,
+            document_ids=query.document_ids,
+            exclude_document_ids=query.exclude_document_ids,
         )
 
         return JobResponse(

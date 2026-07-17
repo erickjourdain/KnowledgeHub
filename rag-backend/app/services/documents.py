@@ -13,13 +13,16 @@ def get_documents_by_collection_without_relations(
     collection_id: int, 
     db: Session,
     skip: int = 0, 
-    limit: int = 10
+    limit: int = 10,
+    search: str | None = None
 ) -> list[DocumentsResponseNbChunks]:
     """Récupère les documents d'une collection sans les relations"""
     try:
-        documents = db.query(Document) \
-            .filter(Document.collection_id == collection_id, Document.is_indexed) \
-            .options(raiseload("*")).order_by(Document.created_at.desc()) \
+        query = db.query(Document).filter(Document.collection_id == collection_id, Document.is_indexed)
+        if search:
+            query = query.filter(Document.title.ilike(f"%{search}%"))
+            
+        documents = query.options(raiseload("*")).order_by(Document.created_at.desc()) \
             .offset(skip).limit(limit).all()
         
         responses = []
@@ -35,11 +38,15 @@ def get_documents_by_collection_without_relations(
         print(f"Error in get_documents_by_collection_without_relations: {e}")
         raise e
     
-def get_documents_count_by_collection(collection_id: int, db: Session) -> int:
+def get_documents_count_by_collection(collection_id: int, db: Session, search: str | None = None) -> int:
     """Récupère le nombre de documents d'une collection"""
     try:
-        count = db.query(func.count(Document.id)) \
-            .filter(Document.collection_id == collection_id, Document.is_indexed).scalar()
+        query = db.query(func.count(Document.id)) \
+            .filter(Document.collection_id == collection_id, Document.is_indexed)
+        if search:
+            query = query.filter(Document.title.ilike(f"%{search}%"))
+            
+        count = query.scalar()
         return count
     
     except Exception as e:

@@ -12,19 +12,19 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  Divider,
   Grid,
   IconButton,
   Paper,
   Typography
 } from '@mui/material';
+import DescriptionIcon from '@mui/icons-material/Description';
 import DeleteIcon from "@mui/icons-material/Delete";
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import UploadFileIcon from '@mui/icons-material/UploadFile';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import { DataGrid, type GridColDef, type GridPaginationModel, type GridRenderCellParams } from '@mui/x-data-grid';
 import ConfirmationDialog from '@components/ConfirmationDialog';
 import ConfirmationMessage from '@components/ConfirmationMessage';
+import AdminPageHeader from '@components/AdminPageHeader';
 import { deleteDocument, fetchCollectionDocument } from '@api/collections';
 import type { Document } from "@appTypes/Document";
 import { useAtomValue } from 'jotai';
@@ -146,10 +146,10 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
-        <UploadFileIcon color="primary" />Documents indexés
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <AdminPageHeader 
+        title="Documents indexés" 
+        icon={<DescriptionIcon />} 
+      />
       <Paper
         variant="outlined"
         sx={{

@@ -57,6 +57,8 @@ class RagQuery(BaseModel):
     title: Optional[str] = None
     model: Optional[str] = None
     top_k: Optional[int] = 5
+    document_ids: Optional[List[int]] = None
+    exclude_document_ids: Optional[List[int]] = None
 
 class Source(BaseModel):
     id: int

@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { createFileRoute, useLoaderData, useRouter } from '@tanstack/react-router';
 import Dropzone from 'react-dropzone'
 import { useAtom, useSetAtom } from 'jotai';
-import { Box, Button, Chip, Divider, Grid, Paper, Typography } from '@mui/material';
+import { Box, Button, Chip, Grid, Paper, Typography } from '@mui/material';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import UploadFileIcon from '@mui/icons-material/UploadFile';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import InsertionList from '@components/InsertionList';
+import AdminPageHeader from '@components/AdminPageHeader';
 import {
   jobIngestionIdsAtom,
   jobIngestionUpdatedAtom,
@@ -87,10 +89,10 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
-        <UploadFileIcon color="primary" />Insertion de documents
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <AdminPageHeader 
+        title="Insérer document" 
+        icon={<UploadFileIcon />} 
+      />
       <Paper variant='outlined' sx={{ p: 3, mb: 3, borderRadius: 2, backgroundColor: 'action.hover', borderColor: 'info.main', display: 'flex', gap: 2 }}>
         <InfoOutlinedIcon color='info' sx={{ fontSize: 28 }} />
         <Box>
@@ -98,6 +100,31 @@ function RouteComponent() {
           <Typography variant='body2' color='text.secondary'>
             Sélectionnez des fichiers PDF ou Word à insérer dans la base de connaissance en les glissant-déposant ci-dessous, ou en cliquant sur l'icône "Upload".
             Une fois les fichiers sélectionnées, cliquer sur le bouton "INSÉRER" pour lancer le traitement. Les documents sont envoyés pour traitement, ce qui peut prendre quelques minutes selon le nombre de pages et le nombre de documents.
+          </Typography>
+        </Box>
+      </Paper>
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 2,
+          background: 'linear-gradient(180deg, rgba(245, 158, 11, 0.02) 0%, rgba(15, 23, 42, 0.45) 100%)',
+          borderColor: 'rgba(245, 158, 11, 0.25)',
+          display: 'flex',
+          gap: 2
+        }}
+      >
+        <WarningAmberIcon sx={{ color: '#f59e0b', fontSize: 28 }} />
+        <Box>
+          <Typography variant='subtitle1' fontWeight='bold' sx={{ color: '#f59e0b' }} mb={0.5}>
+            Recommandations importantes
+          </Typography>
+          <Typography variant='body2' color='text.secondary' sx={{ mb: 1, lineHeight: 1.6 }}>
+            Pour obtenir des réponses pertinentes, vos fichiers doivent avoir une structure textuelle claire. Les PDF issus de présentations PowerPoint, par exemple, manquent de repères sémantiques et ne peuvent pas être correctement interprétés par l'extracteur.
+          </Typography>
+          <Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.6 }}>
+            De plus, veuillez noter que <b>le système est configuré et optimisé pour le traitement de textes en français</b>.
           </Typography>
         </Box>
       </Paper>

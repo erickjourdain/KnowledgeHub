@@ -33,15 +33,27 @@ def search_chunks(
     bm25_query: str,
     top_k: int,
     db: Session,
+    document_ids: list[int] | None = None,
+    exclude_document_ids: list[int] | None = None,
 ) -> list[DocumentChunk]:
     """Recherche hybride : similarité cosinique + BM25"""
 
     # 1. Recherche par similarité cosinique (vectorielle)
-    vector_chunks = db.scalars(
+    vector_query = (
         select(DocumentChunk)
         .join(Document, DocumentChunk.document_id == Document.id)
         .where(Document.collection_id == collection.id)
-        .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
+    )
+    if document_ids is not None:
+        if len(document_ids) > 0:
+            vector_query = vector_query.where(Document.id.in_(document_ids))
+        else:
+            vector_query = vector_query.where(text("1=0"))
+    if exclude_document_ids is not None and len(exclude_document_ids) > 0:
+        vector_query = vector_query.where(Document.id.not_in(exclude_document_ids))
+
+    vector_chunks = db.scalars(
+        vector_query.order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
         .limit(top_k * 2)  # Plus de résultats pour la fusion
     ).all()
 
@@ -53,8 +65,7 @@ def search_chunks(
         setweight(to_tsvector('french', documents.title), 'B')
     """)
 
-    # Exécution avec execute() pour obtenir les tuples (chunk, score)
-    bm25_result = db.execute(
+    bm25_query_select = (
         select(
             DocumentChunk,
             func.ts_rank_cd(
@@ -64,7 +75,18 @@ def search_chunks(
         )
         .join(Document, DocumentChunk.document_id == Document.id)
         .where(Document.collection_id == collection.id)
-        .order_by(
+    )
+    if document_ids is not None:
+        if len(document_ids) > 0:
+            bm25_query_select = bm25_query_select.where(Document.id.in_(document_ids))
+        else:
+            bm25_query_select = bm25_query_select.where(text("1=0"))
+    if exclude_document_ids is not None and len(exclude_document_ids) > 0:
+        bm25_query_select = bm25_query_select.where(Document.id.not_in(exclude_document_ids))
+
+    # Exécution avec execute() pour obtenir les tuples (chunk, score)
+    bm25_result = db.execute(
+        bm25_query_select.order_by(
             func.ts_rank_cd(
                 tsvector_expr,
                 func.plainto_tsquery('french', bm25_query)
@@ -187,7 +209,9 @@ def query_db_processing(
     conversation_id: int | None,
     model: str,
     top_k: int,
-    db: Session
+    db: Session,
+    document_ids: list[int] | None = None,
+    exclude_document_ids: list[int] | None = None,
 ) -> RagResponse:
     """
     Traitement de la requête de recherche dans la base de connaissances
@@ -257,7 +281,9 @@ def query_db_processing(
             query_embedding=query_embedding,
             bm25_query=ollama_response["bm25_query"],
             top_k=top_k * 2, # Récupérer plus de chunks pour le reranking
-            db=db
+            db=db,
+            document_ids=document_ids,
+            exclude_document_ids=exclude_document_ids,
         )
 
         # Reranking des chunks récupérés avec le modèle de langage pour n'avoir que les plus pertinents
@@ -268,9 +294,9 @@ def query_db_processing(
             status=job.get_status(), 
             step="starting", 
             progress=40, 
-            message="Reranking des extraits récupérés pour n'avoir que les plus pertinents"
+            message="Classement des extraits récupérés pour ne conserver que les plus pertinents"
         )
-        print("Reranking des extraits récupérés via Ollama...")       
+        print("Classement des extraits récupérés via Ollama...")       
 
         # Appel de la fonction de reranking
         filtered_chunks = rerank_chunks_batch(

@@ -202,15 +202,17 @@ def update_collection(collection_id: int, collection_update: CollectionUpdate, d
     try:
         stmt = update(Collection).where(Collection.id == collection_id)
 
-        if (collection_update.name):
+        if collection_update.name is not None:
             stmt = stmt.values(name=collection_update.name)
-        if (collection_update.description):
+        if collection_update.description is not None:
             stmt = stmt.values(description=collection_update.description)
         
         db.execute(stmt)
+        db.commit()
         return True
     except Exception as e:
         print(f"Error in update_collection: {e}")
+        db.rollback()
         raise e
     
 

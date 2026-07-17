@@ -21,6 +21,7 @@ import ArticleIcon from '@mui/icons-material/Article';
 import ChatIcon from '@mui/icons-material/Chat';
 import SearchIcon from '@mui/icons-material/Search';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import { EmptyCollectionsState } from '@components/EmptyCollectionsState';
 import { fetchCollections } from '@api/collections';
 import dayjs from 'dayjs';
@@ -308,7 +309,7 @@ function Index() {
                         <ChatIcon fontSize='small'/>
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title='Documents'>
+                    <Tooltip title='Recherche avancée'>
                       <IconButton 
                         size='small' 
                         sx={{ 
@@ -321,7 +322,7 @@ function Index() {
                         }}
                         onClick={() => handleDocument(collection.id)}
                       >
-                        <ArticleIcon fontSize='small'/>
+                        <ManageSearchIcon fontSize='small'/>
                       </IconButton>
                     </Tooltip>
                     <Tooltip title='Administration'>

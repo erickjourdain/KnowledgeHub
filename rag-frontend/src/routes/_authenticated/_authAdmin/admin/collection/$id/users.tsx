@@ -12,7 +12,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  Divider,
   Grid,
   Paper,
   Typography
@@ -27,6 +26,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import PeopleIcon from '@mui/icons-material/People';
+import AdminPageHeader from '@components/AdminPageHeader';
 import {
   addCollectionUser,
   deleteCollectionUser,
@@ -134,10 +134,10 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
-        <PeopleIcon color="primary" />Gestion des utilisateurs
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <AdminPageHeader 
+        title="Utilisateurs autorisés" 
+        icon={<PeopleIcon />} 
+      />
       <Paper
         variant="outlined"
         sx={{

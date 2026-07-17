@@ -1,18 +1,15 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { createFileRoute } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useAtom, useSetAtom } from 'jotai';
 import { observe } from 'jotai-effect';
-import Markdown from "react-markdown";
-import remarkGfm from 'remark-gfm';
 import { ChatBox } from '@mui/x-chat';
 import type {
   ChatMessage,
   ChatAdapter,
   ChatConversation,
-  ChatUser,
-  ChatMessagePart
+  ChatUser
 } from '@mui/x-chat/headless';
 import {
   fetchConversations,
@@ -23,28 +20,27 @@ import {
   fetchDefaultLlmModel,
   type LlmModel
 } from '@api/chat';
-import { Box, MenuItem, Select, CircularProgress, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
+import { Box, CircularProgress, Typography } from '@mui/material';
 import { jobQueryAtom } from '@store/jobQueryStore';
 import { conversationAtom } from '@store/conversationStore';
-import { createAvatar, createAvatarDataUrl, createEmptyConversation } from '@utils/chat';
+import { documentSelectionAtom } from '@store/documentSelectionStore';
+import { createAvatar, createAvatarDataUrl, createEmptyConversation, defineMessageParts } from '@utils/chat';
 import { useAuth } from '../../../../providers/authProvider';
 import type { RagQuery } from '@appTypes/Query';
-import type { Message } from '@appTypes/Message';
 import SourceDocumentCard from '@components/SourceDocumentCard';
 import ConversationHeaderAction from '@components/ConversationHeaderAction';
 import ConversationHeaderTitle from '@components/ConversationHeaderTitle';
 import UpdatingData from '@components/UpdatingData';
+import ConfirmationMessage from '@components/ConfirmationMessage';
+import ErrorIcon from '@mui/icons-material/Error';
+import ComposerToolbar from '@components/ComposerToolbar';
+import ChatMessageMarkdown from '@components/ChatMessageMarkdown';
+
 type ModelPagination = {
   page: number;
   pageSize: number;
   search: string | null;
 }
-
-const preprocessMarkdown = (text: string): string => {
-  if (!text) return '';
-  return text.replace(/\|\s*\r?\n\s*\r?\n\s*\|/g, '|\n|');
-};
 
 export const Route = createFileRoute('/_authenticated/collection/$id/chat')({
   component: RouteComponent
@@ -73,94 +69,11 @@ function RouteComponent() {
       .catch((err) => console.error("Erreur lors de la récupération du modèle par défaut", err));
   }, []);
 
-  const ComposerToolbar = useMemo(() => {
-    return (props: any) => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, width: '100%', justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SmartToyIcon sx={{ color: 'primary.light', fontSize: '1.2rem' }} />
-          <Select
-            value={selectedModel || ""}
-            onChange={(e) => setSelectedModel(e.target.value)}
-            size="small"
-            variant="standard"
-            disableUnderline
-            sx={{
-              color: 'text.primary',
-              fontSize: '0.85rem',
-              fontWeight: 500,
-              '& .MuiSelect-select': {
-                py: 0.5,
-                px: 1.5,
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '8px',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                '&:focus': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.06)',
-                  borderRadius: '8px',
-                }
-              },
-              '& .MuiSvgIcon-root': {
-                color: 'text.secondary',
-              }
-            }}
-            MenuProps={{
-              PaperProps: {
-                sx: {
-                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                  backdropFilter: 'blur(16px)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderRadius: '12px',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-                  '& .MuiMenuItem-root': {
-                    fontSize: '0.85rem',
-                    py: 1,
-                    px: 1.5,
-                    color: 'text.primary',
-                    '&:hover': {
-                      backgroundColor: 'rgba(99, 102, 241, 0.08)',
-                    },
-                    '&.Mui-selected': {
-                      backgroundColor: 'rgba(99, 102, 241, 0.16)',
-                      color: 'primary.light',
-                      fontWeight: 600,
-                      '&:hover': {
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                      }
-                    }
-                  }
-                }
-              }
-            }}
-          >
-            {models.length === 0 ? (
-              <MenuItem value="" disabled>
-                Chargement des modèles...
-              </MenuItem>
-            ) : (
-              models.map((m) => (
-                <MenuItem key={m.name} value={m.name || ""}>
-                  {m.name} {m.parameter_size ? `(${m.parameter_size})` : ''}
-                </MenuItem>
-              ))
-            )}
-            {models.find((m) => m.name === selectedModel) === undefined && selectedModel && (
-              <MenuItem value={selectedModel}>
-                {selectedModel}
-              </MenuItem>
-            )}
-          </Select>
-        </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          {props.children}
-        </Box>
-      </Box>
-    );
-  }, [models, selectedModel]);
-  const [conversationState, setConversationState] =
-    useAtom(conversationAtom);
+  const [conversationState, setConversationState] = useAtom(conversationAtom);
+  const [selectionMap] = useAtom(documentSelectionAtom);
   const meChatUser = useMemo<ChatUser>(() => createAvatar(auth.user, '#1976d2'), [auth.user]);
   const [assistantChatUser] = useState<ChatUser>(createAvatar('assistant'));
-  const [modelPagination, _setModelPagination] = useState<ModelPagination>({
+  const [modelPagination] = useState<ModelPagination>({
     page: 1,
     pageSize: 20,
     search: null
@@ -172,6 +85,9 @@ function RouteComponent() {
   const [activeConversationId, setActiveConversationId] = useState<string | undefined>('new');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [snackbarColor, setSnackbarColor] = useState<'success' | 'error' | 'warning'>('success');
 
   const frenchLocale = {
     composerInputPlaceholder: 'Posez moi une question...',
@@ -193,26 +109,6 @@ function RouteComponent() {
       return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
     },
   };
-
-  const defineMessageParts = useCallback((message: Message) => {
-    const messageParts: ChatMessagePart[] = [];
-    messageParts.push(
-      { type: 'text', text: message.answer || 'aucune réponse' }
-    );
-    if (message.sources) {
-      message.sources.forEach(source => {
-        messageParts.push(
-          {
-            type: 'source-document',
-            sourceId: source.id.toString(),
-            title: source.fichier,
-            text: `${source.chapitre} - ${source.section}`
-          }
-        )
-      })
-    }
-    return messageParts;
-  }, []);
 
   useEffect(() => {
     queryClient.resetQueries({
@@ -253,8 +149,7 @@ function RouteComponent() {
       setConversations(conversations);
       setNbConversations(response.count);
       if (response.count) {
-        setActiveConversationId(conversationState.currentConversation ||
-          response.data[0].uuid);
+        setActiveConversationId(conversationState.currentConversation || response.data[0].uuid);
         setConversationState(prev => ({ ...prev, currentConversation: null }));
       } else {
         setActiveConversationId('new');
@@ -274,6 +169,15 @@ function RouteComponent() {
           const conversationMessages: ChatMessage[] = [];
           response.data.forEach(newMessage => {
             conversationMessages.push({
+              id: `assitant-${newMessage.uuid}`,
+              conversationId: activeConversationId,
+              role: 'assistant',
+              parts: defineMessageParts(newMessage),
+              status: 'read',
+              author: assistantChatUser,
+              createdAt: dayjs(newMessage.created_at).toISOString(),
+            });
+            conversationMessages.push({
               id: `user-${newMessage.uuid}`,
               conversationId: activeConversationId,
               role: 'user',
@@ -284,16 +188,8 @@ function RouteComponent() {
               status: 'read',
               author: createAvatar(newMessage.sender, '#1976d2')
             });
-            conversationMessages.push({
-              id: `assitant-${newMessage.uuid}`,
-              conversationId: activeConversationId,
-              role: 'assistant',
-              parts: defineMessageParts(newMessage),
-              status: 'read',
-              author: assistantChatUser
-            });
-          })
-          setMessages(conversationMessages);
+          });
+          setMessages(conversationMessages.reverse());
         })
     } else setMessages([]);
   }, [activeConversationId]);
@@ -302,10 +198,27 @@ function RouteComponent() {
     async sendMessage({ message }) {
       const lastMessage = message.parts[message.parts.length - 1];
       if (lastMessage.type !== 'text') return new ReadableStream();
+
+      const selection = selectionMap[id];
+      let documentIds: number[] | undefined = undefined;
+      let excludeDocumentIds: number[] | undefined = undefined;
+
+      if (selection) {
+        if (selection.mode === 'all_except') {
+          if (selection.ids.length > 0) {
+            excludeDocumentIds = selection.ids;
+          }
+        } else if (selection.mode === 'none_except') {
+          documentIds = selection.ids;
+        }
+      }
+
       const query: RagQuery = {
         query: lastMessage.text,
         collection_id: parseInt(id),
-        model: selectedModel || undefined
+        model: selectedModel || undefined,
+        document_ids: documentIds,
+        exclude_document_ids: excludeDocumentIds
       }
       if (activeConversationId !== 'new')
         query.conversation_uuid = activeConversationId
@@ -332,7 +245,30 @@ function RouteComponent() {
       const unobserve = observe((get, set) => {
         const jobInfo = get(jobQueryAtom);
         if (jobInfo) {
-          if (jobInfo.progress === 100) {
+          if (jobInfo.status === 'failed') {
+            setOpenSnackbar(true);
+            setSnackbarMessage("Une erreur s'est produite lors du traitement de votre demande.");
+            setSnackbarColor("error");
+
+            onEvent({
+              type: 'message-added',
+              message: {
+                id: jobInfo.job_id,
+                role: 'assistant',
+                status: 'error',
+                parts: [{
+                  type: 'data-error-message',
+                  data: {
+                    text: "Le système n'a pas pu traiter la demande."
+                  }
+                } as any],
+                author: assistantChatUser,
+                createdAt: dayjs().format(),
+                conversationId: activeConversationId
+              }
+            });
+            set(jobQueryAtom, null);
+          } else if (jobInfo.progress === 100) {
             const uuid = jobInfo.message?.split(':')[1].trim();
             fetchMessage(uuid || '')
               .then(message => {
@@ -347,7 +283,7 @@ function RouteComponent() {
                     message: {
                       id: jobInfo.job_id,
                       role: 'assistant',
-                      status: jobInfo.status === 'failed' ? 'error' : 'sent',
+                      status: 'sent',
                       parts: defineMessageParts(message),
                       author: assistantChatUser,
                       createdAt: dayjs(message.created_at).format(),
@@ -356,7 +292,30 @@ function RouteComponent() {
                   });
                 }
               })
-              .catch(() => console.error("Erreur lors de la récupération du message"))
+              .catch(() => {
+                console.error("Erreur lors de la récupération du message");
+                setOpenSnackbar(true);
+                setSnackbarMessage("Une erreur s'est produite lors du traitement de votre demande.");
+                setSnackbarColor("error");
+
+                onEvent({
+                  type: 'message-added',
+                  message: {
+                    id: jobInfo.job_id,
+                    role: 'assistant',
+                    status: 'error',
+                    parts: [{
+                      type: 'data-error-message',
+                      data: {
+                        text: "Le système n'a pas pu traiter la demande."
+                      }
+                    } as any],
+                    author: assistantChatUser,
+                    createdAt: dayjs().format(),
+                    conversationId: activeConversationId
+                  }
+                });
+              })
               .finally(() => set(jobQueryAtom, null));
           } else {
             onEvent({
@@ -382,6 +341,18 @@ function RouteComponent() {
     },
   };
 
+  const MemoizedComposerToolbar = useMemo(() => {
+    return (props: any) => (
+      <ComposerToolbar
+        models={models}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+      >
+        {props.children}
+      </ComposerToolbar>
+    );
+  }, [models, selectedModel]);
+
   return (
     <>
       <ChatBox
@@ -396,7 +367,7 @@ function RouteComponent() {
         slots={{
           conversationTitle: ConversationHeaderTitle,
           conversationHeaderActions: ConversationHeaderAction,
-          composerToolbar: ComposerToolbar
+          composerToolbar: MemoizedComposerToolbar
         }}
         partRenderers={{
           'source-document': ({ part }) => <SourceDocumentCard part={part as any} />,
@@ -407,62 +378,21 @@ function RouteComponent() {
                 {part.data?.text}
               </Typography>
             </Box>
+          ),
+          'data-error-message': ({ part }: { part: any }) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 1, color: 'error.main' }}>
+              <ErrorIcon color="error" />
+              <Typography variant="body2" fontWeight="medium">
+                {part.data?.text || "Le système n'a pas pu traiter la demande."}
+              </Typography>
+            </Box>
           )
         }}
         slotProps={{
           messageContent: {
             partProps: {
               text: {
-                renderText: (text) => (
-                  <Markdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      table: ({ node, ...props }) => (
-                        <TableContainer 
-                          component={Box} 
-                          sx={{ 
-                            my: 2, 
-                            border: '1px solid rgba(255, 255, 255, 0.1)', 
-                            borderRadius: '8px',
-                            overflow: 'hidden',
-                            backgroundColor: 'rgba(0, 0, 0, 0.2)' 
-                          }}
-                        >
-                          <Table size="small" {...props} />
-                        </TableContainer>
-                      ),
-                      thead: ({ node, ...props }) => <TableHead {...props} />,
-                      tbody: ({ node, ...props }) => <TableBody {...props} />,
-                      tr: ({ node, ...props }) => <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }} {...props} />,
-                      th: ({ node, align, ...props }) => (
-                        <TableCell 
-                          align={(align === 'char' ? 'left' : align) as any} 
-                          sx={{ 
-                            fontWeight: '600', 
-                            color: 'primary.light', 
-                            backgroundColor: 'rgba(255, 255, 255, 0.04)',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                            py: 1 
-                          }} 
-                          {...props} 
-                        />
-                      ),
-                      td: ({ node, align, ...props }) => (
-                        <TableCell 
-                          align={(align === 'char' ? 'left' : align) as any} 
-                          sx={{ 
-                            color: 'rgba(255, 255, 255, 0.8)',
-                            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                            py: 0.75 
-                          }} 
-                          {...props} 
-                        />
-                      ),
-                    }}
-                  >
-                    {preprocessMarkdown(text)}
-                  </Markdown>
-                )
+                renderText: (text) => <ChatMessageMarkdown text={text} />
               },
             },
           },
@@ -472,7 +402,7 @@ function RouteComponent() {
           },
         }}
         sx={{
-          height: 'calc(100vh - 160px)',
+          height: 'calc(100vh - 200px)',
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: 'rgba(15, 23, 42, 0.3)',
@@ -488,21 +418,17 @@ function RouteComponent() {
           '& .MuiChatBox-layout': {
             backgroundColor: 'transparent',
           },
-          // Unifier le fond du volet de conversation (fil des messages)
           '& .MuiChatBox-threadPane': {
             backgroundColor: 'rgba(15, 23, 42, 0.25)',
             borderLeft: '1px solid rgba(255, 255, 255, 0.06)',
           },
-          // Unifier le fond de la liste des conversations (sidebar gauche du chat)
           '& .MuiChatBox-conversationsPane': {
             backgroundColor: 'rgba(15, 23, 42, 0.45)',
           },
-          // L'en-tête de la conversation
           '& .MuiChatConversation-header': {
             backgroundColor: 'rgba(15, 23, 42, 0.45) !important',
             borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
           },
-          // Styliser les éléments sélectionnés dans la liste de conversations
           '& .MuiChatConversationList-itemSelected': {
             backgroundColor: 'rgba(99, 102, 241, 0.08) !important',
             color: '#818cf8',
@@ -596,6 +522,12 @@ function RouteComponent() {
       <UpdatingData
         open={loading}
         message="Chargement des conversations..."
+      />
+      <ConfirmationMessage
+        open={openSnackbar}
+        message={snackbarMessage}
+        color={snackbarColor}
+        onClose={() => setOpenSnackbar(false)}
       />
     </>
   )

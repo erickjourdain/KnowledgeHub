@@ -5,7 +5,6 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import {
   Box,
   Button,
-  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,6 +22,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import type { CollectionCreate, CollectionUpdate, Collection } from '@appTypes/Collection';
 import { updateCollection } from '@api/collections';
 import ConfirmationMessage from '@components/ConfirmationMessage';
+import AdminPageHeader from '@components/AdminPageHeader';
 
 export const Route = createFileRoute(
   '/_authenticated/_authAdmin/admin/collection/$id/update',
@@ -139,10 +139,10 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <Typography variant='h6' display="flex" alignItems="center" gap={1}>
-        <SettingsIcon color="primary" /> Mise à jour de la collection
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <AdminPageHeader 
+        title="Mettre à jour" 
+        icon={<SettingsIcon />} 
+      />
       <Paper
         variant="outlined"
         sx={{
