@@ -73,8 +73,8 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
   // Détection des routes actives
   const isHomeActive = location.pathname === '/';
   const isUsersActive = location.pathname.includes('/admin/users');
-  const isChatActive = location.pathname.includes('/chat');
-  const isDocumentsActive = location.pathname.includes('/documents');
+  const isChatActive = location.pathname.startsWith('/collection/') && location.pathname.includes('/chat');
+  const isDocumentsActive = location.pathname.startsWith('/collection/') && location.pathname.includes('/documents');
   const isAdminActive = location.pathname.includes('/admin/collection/');
 
   const handleHome = () => {
@@ -225,7 +225,7 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
               {renderItem("Chat", <ChatIcon />, handleChat, isChatActive)}
               {renderItem("Document", <ArticleIcon />, handleDocument, isDocumentsActive)}
               
-              {(isAdmin(auth.user) || isCreator(auth.user, collection.id)) &&
+              {(isAdmin(auth.user) || isCreator(auth.user, collection.creator_id)) &&
                 renderItem("Admin", <SettingsIcon />, handleAdmin, isAdminActive)
               }
             </>

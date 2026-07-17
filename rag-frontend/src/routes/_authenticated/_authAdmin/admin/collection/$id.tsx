@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createFileRoute, Outlet, useNavigate } from '@tanstack/react-router';
+import { useSetAtom } from 'jotai';
+import { collectionAtom } from '@store/collectionStore';
 import {
   Container,
   Grid,
@@ -100,6 +102,12 @@ function RouteComponent() {
   const collection = Route.useLoaderData();
   const navigate = useNavigate();
   const { id } = Route.useParams();
+  const setCollection = useSetAtom(collectionAtom);
+
+  useEffect(() => {
+    setCollection(collection);
+    return () => setCollection(null);
+  }, [collection, setCollection]);
 
   const handleClick = (item: Item) => {
     navigate({ to: `/admin/collection/$id/${item.path}`, params: { id } })

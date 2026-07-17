@@ -23,7 +23,7 @@ import {
   fetchDefaultLlmModel,
   type LlmModel
 } from '@api/chat';
-import { Box, MenuItem, Select } from '@mui/material';
+import { Box, MenuItem, Select, CircularProgress, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 import SmartToyIcon from '@mui/icons-material/SmartToy';
 import { jobQueryAtom } from '@store/jobQueryStore';
 import { conversationAtom } from '@store/conversationStore';
@@ -40,6 +40,11 @@ type ModelPagination = {
   pageSize: number;
   search: string | null;
 }
+
+const preprocessMarkdown = (text: string): string => {
+  if (!text) return '';
+  return text.replace(/\|\s*\r?\n\s*\r?\n\s*\|/g, '|\n|');
+};
 
 export const Route = createFileRoute('/_authenticated/collection/$id/chat')({
   component: RouteComponent
@@ -229,7 +234,7 @@ function RouteComponent() {
 
   useEffect(() => {
     setLoading(true);
-    queryClient.ensureQueryData({
+    queryClient.fetchQuery({
       queryKey: ['conversations', { collection: id }],
       queryFn: () => fetchConversations(parseInt(id))
     }).then(response => {
@@ -251,6 +256,8 @@ function RouteComponent() {
         setActiveConversationId(conversationState.currentConversation ||
           response.data[0].uuid);
         setConversationState(prev => ({ ...prev, currentConversation: null }));
+      } else {
+        setActiveConversationId('new');
       }
     }).catch(error => {
       console.error(error);
@@ -359,8 +366,10 @@ function RouteComponent() {
                 role: 'assistant',
                 status: 'streaming',
                 parts: [{
-                  type: 'text',
-                  text: jobInfo.message || 'aucune information'
+                  type: 'data-search-progress',
+                  data: {
+                    text: jobInfo.message || 'aucune information'
+                  }
                 }],
                 author: assistantChatUser,
                 conversationId: activeConversationId
@@ -390,15 +399,68 @@ function RouteComponent() {
           composerToolbar: ComposerToolbar
         }}
         partRenderers={{
-          'source-document': ({ part }) => <SourceDocumentCard part={part as any} />
+          'source-document': ({ part }) => <SourceDocumentCard part={part as any} />,
+          'data-search-progress': ({ part }: { part: any }) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
+              <CircularProgress size={16} sx={{ color: 'primary.light' }} />
+              <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
+                {part.data?.text}
+              </Typography>
+            </Box>
+          )
         }}
         slotProps={{
           messageContent: {
             partProps: {
               text: {
                 renderText: (text) => (
-                  <Markdown remarkPlugins={[remarkGfm]}>
-                    {text}
+                  <Markdown 
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({ node, ...props }) => (
+                        <TableContainer 
+                          component={Box} 
+                          sx={{ 
+                            my: 2, 
+                            border: '1px solid rgba(255, 255, 255, 0.1)', 
+                            borderRadius: '8px',
+                            overflow: 'hidden',
+                            backgroundColor: 'rgba(0, 0, 0, 0.2)' 
+                          }}
+                        >
+                          <Table size="small" {...props} />
+                        </TableContainer>
+                      ),
+                      thead: ({ node, ...props }) => <TableHead {...props} />,
+                      tbody: ({ node, ...props }) => <TableBody {...props} />,
+                      tr: ({ node, ...props }) => <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }} {...props} />,
+                      th: ({ node, align, ...props }) => (
+                        <TableCell 
+                          align={(align === 'char' ? 'left' : align) as any} 
+                          sx={{ 
+                            fontWeight: '600', 
+                            color: 'primary.light', 
+                            backgroundColor: 'rgba(255, 255, 255, 0.04)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                            py: 1 
+                          }} 
+                          {...props} 
+                        />
+                      ),
+                      td: ({ node, align, ...props }) => (
+                        <TableCell 
+                          align={(align === 'char' ? 'left' : align) as any} 
+                          sx={{ 
+                            color: 'rgba(255, 255, 255, 0.8)',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                            py: 0.75 
+                          }} 
+                          {...props} 
+                        />
+                      ),
+                    }}
+                  >
+                    {preprocessMarkdown(text)}
                   </Markdown>
                 )
               },

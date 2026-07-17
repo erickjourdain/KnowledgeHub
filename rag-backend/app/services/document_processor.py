@@ -110,8 +110,12 @@ def chunk_document_hierarchical(
         # contextualize() serialise le chunk avec sa hierarchie de titres parents
         content = chunker.contextualize(chunk)
         
-        # Auto-contextualisation : ajout du nom du document au début
-        prefix = f"[Document: {document_title}]\n"
+        # Nettoyage des doubles retours à la ligne dans les tables Markdown
+        import re
+        content = re.sub(r'\|\s*\n\s*\n\s*\|', '|\n|', content)
+        
+        # Auto-contextualisation : ajout du nom du document au début (avec double saut de ligne pour séparer du tableau)
+        prefix = f"[Document: {document_title}]\n\n"
         content = prefix + content
         
         # Extraction de la hiérarchie des titres

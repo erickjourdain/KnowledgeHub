@@ -24,6 +24,7 @@ import { Route as AuthenticatedAuthAdminAdminUsersIndexRouteImport } from './rou
 import { Route as AuthenticatedAuthAdminAdminUsersIdRouteImport } from './routes/_authenticated/_authAdmin/admin/users/$id'
 import { Route as AuthenticatedAuthAdminAdminCollectionNewRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/new'
 import { Route as AuthenticatedAuthAdminAdminCollectionIdRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id'
+import { Route as AuthenticatedAuthAdminAdminCollectionIdIndexRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/index'
 import { Route as AuthenticatedAuthAdminAdminCollectionIdUsersRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/users'
 import { Route as AuthenticatedAuthAdminAdminCollectionIdUpdateRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/update'
 import { Route as AuthenticatedAuthAdminAdminCollectionIdReindexRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/reindex'
@@ -111,6 +112,12 @@ const AuthenticatedAuthAdminAdminCollectionIdRoute =
     path: '/admin/collection/$id',
     getParentRoute: () => AuthenticatedAuthAdminRoute,
   } as any)
+const AuthenticatedAuthAdminAdminCollectionIdIndexRoute =
+  AuthenticatedAuthAdminAdminCollectionIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+  } as any)
 const AuthenticatedAuthAdminAdminCollectionIdUsersRoute =
   AuthenticatedAuthAdminAdminCollectionIdUsersRouteImport.update({
     id: '/users',
@@ -168,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/admin/collection/$id/reindex': typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
   '/admin/collection/$id/update': typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
   '/admin/collection/$id/users': typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
+  '/admin/collection/$id/': typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/change-password': typeof ChangePasswordRoute
@@ -179,7 +187,6 @@ export interface FileRoutesByTo {
   '/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
   '/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
   '/collection/$id/documents': typeof AuthenticatedCollectionIdDocumentsRoute
-  '/admin/collection/$id': typeof AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren
   '/admin/collection/new': typeof AuthenticatedAuthAdminAdminCollectionNewRoute
   '/admin/users/$id': typeof AuthenticatedAuthAdminAdminUsersIdRoute
   '/admin/users': typeof AuthenticatedAuthAdminAdminUsersIndexRoute
@@ -189,6 +196,7 @@ export interface FileRoutesByTo {
   '/admin/collection/$id/reindex': typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
   '/admin/collection/$id/update': typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
   '/admin/collection/$id/users': typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
+  '/admin/collection/$id': typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/_authAdmin/admin/collection/$id/reindex': typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
   '/_authenticated/_authAdmin/admin/collection/$id/update': typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
   '/_authenticated/_authAdmin/admin/collection/$id/users': typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
+  '/_authenticated/_authAdmin/admin/collection/$id/': typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/admin/collection/$id/reindex'
     | '/admin/collection/$id/update'
     | '/admin/collection/$id/users'
+    | '/admin/collection/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/change-password'
@@ -247,7 +257,6 @@ export interface FileRouteTypes {
     | '/collection/$id'
     | '/collection/$id/chat'
     | '/collection/$id/documents'
-    | '/admin/collection/$id'
     | '/admin/collection/new'
     | '/admin/users/$id'
     | '/admin/users'
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/admin/collection/$id/reindex'
     | '/admin/collection/$id/update'
     | '/admin/collection/$id/users'
+    | '/admin/collection/$id'
   id:
     | '__root__'
     | '/_authenticated'
@@ -280,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_authAdmin/admin/collection/$id/reindex'
     | '/_authenticated/_authAdmin/admin/collection/$id/update'
     | '/_authenticated/_authAdmin/admin/collection/$id/users'
+    | '/_authenticated/_authAdmin/admin/collection/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -397,6 +408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRouteImport
       parentRoute: typeof AuthenticatedAuthAdminRoute
     }
+    '/_authenticated/_authAdmin/admin/collection/$id/': {
+      id: '/_authenticated/_authAdmin/admin/collection/$id/'
+      path: '/'
+      fullPath: '/admin/collection/$id/'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdIndexRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+    }
     '/_authenticated/_authAdmin/admin/collection/$id/users': {
       id: '/_authenticated/_authAdmin/admin/collection/$id/users'
       path: '/users'
@@ -449,6 +467,7 @@ interface AuthenticatedAuthAdminAdminCollectionIdRouteChildren {
   AuthenticatedAuthAdminAdminCollectionIdReindexRoute: typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
   AuthenticatedAuthAdminAdminCollectionIdUpdateRoute: typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
   AuthenticatedAuthAdminAdminCollectionIdUsersRoute: typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
+  AuthenticatedAuthAdminAdminCollectionIdIndexRoute: typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
 }
 
 const AuthenticatedAuthAdminAdminCollectionIdRouteChildren: AuthenticatedAuthAdminAdminCollectionIdRouteChildren =
@@ -465,6 +484,8 @@ const AuthenticatedAuthAdminAdminCollectionIdRouteChildren: AuthenticatedAuthAdm
       AuthenticatedAuthAdminAdminCollectionIdUpdateRoute,
     AuthenticatedAuthAdminAdminCollectionIdUsersRoute:
       AuthenticatedAuthAdminAdminCollectionIdUsersRoute,
+    AuthenticatedAuthAdminAdminCollectionIdIndexRoute:
+      AuthenticatedAuthAdminAdminCollectionIdIndexRoute,
   }
 
 const AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren =

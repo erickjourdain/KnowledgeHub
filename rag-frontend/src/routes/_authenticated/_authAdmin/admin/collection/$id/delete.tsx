@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createFileRoute, useLoaderData, useNavigate } from '@tanstack/react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Box, Button, Divider, Grid, TextField, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Paper } from '@mui/material';
 import ConfirmationMessage from '@components/ConfirmationMessage';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -20,6 +21,7 @@ function RouteComponent() {
     from: '/_authenticated/_authAdmin/admin/collection/$id'
   });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [collectionName, setCollectionName] = useState<string>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [openSnackbar, setOpenSnackbar] = useState<boolean>(false);
@@ -36,6 +38,7 @@ function RouteComponent() {
       deleteCollection(String(collection.id))
         .then((response) => {
           if (response.message) {
+            queryClient.resetQueries({ queryKey: ['collections'] });
             setMessage("Collection supprimée avec succès");
             setColor("success");
             setOpenSnackbar(true);
