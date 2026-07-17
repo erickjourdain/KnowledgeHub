@@ -14,7 +14,7 @@ def query_kb_job(
     collection_id: int,
     conversation_id: int | None,
     top_k: int,
-    user: User
+    user_id: int
 ):
     """
     Job RQ exécuté par le worker pour la recherche dans la base de connaissances
@@ -37,7 +37,7 @@ def query_kb_job(
             uuid=job.id,
             collection_id=collection_id,
             query=query,
-            creator_id=user.id,
+            creator_id=user_id,
             status="processing",
         )
         db.add(job_query_kb)
@@ -58,7 +58,7 @@ def query_kb_job(
                 conversation=Conversation(
                     collection_id=collection_id,
                     title=result.title,
-                    creator_id=user.id
+                    creator_id=user_id
                 )
                 db.add(conversation)
                 db.commit()
@@ -72,7 +72,7 @@ def query_kb_job(
         sources = [s.model_dump() for s in result.sources] if result.sources else []
         message=Message(
             conversation_id=conversation_id,
-            sender_id=user.id,
+            sender_id=user_id,
             questions=query,
             answer=reponse,
             sources=sources

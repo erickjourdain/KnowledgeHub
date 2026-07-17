@@ -4,11 +4,6 @@ from pathlib import Path
 from typing import List, Dict, Any, cast, Optional
 from datetime import datetime
 
-from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption
-from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import PaginatedPipelineOptions, PdfPipelineOptions, TableFormerMode, TableStructureOptions, EasyOcrOptions
-from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
-from docling.chunking import HybridChunker
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 import tiktoken
@@ -42,6 +37,11 @@ def delete_temp_file(file_path: Path) -> None:
 
 def convert_document(file_path: Path):
     """Convertit un fichier PDF ou DOCX en document DoclingDocument structurel"""
+    from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption
+    from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PaginatedPipelineOptions, PdfPipelineOptions, TableFormerMode, TableStructureOptions, EasyOcrOptions
+    from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+
     # Configuration des options de conversion PDF
     pdf_pipeline_options = PdfPipelineOptions()
     pdf_pipeline_options.do_ocr = True
@@ -76,26 +76,26 @@ def convert_document(file_path: Path):
     return result.document
 
 
-from docling_core.transforms.chunker.hierarchical_chunker import (
-    ChunkingDocSerializer,
-    ChunkingSerializerProvider,
-)
-from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
-
-class CustomSerializerProvider(ChunkingSerializerProvider):
-    def get_serializer(self, doc):
-        return ChunkingDocSerializer(
-            doc=doc,
-            table_serializer=MarkdownTableSerializer()
-        )
-
-
 def chunk_document_hierarchical(
     doc: Any,
     document_id: int,
     document_title: str
 ) -> List[Dict[str, Any]]:
     """Découpe un document DoclingDocument de manière hiérarchique en préservant la structure des tableaux"""
+    from docling.chunking import HybridChunker
+    from docling_core.transforms.chunker.hierarchical_chunker import (
+        ChunkingDocSerializer,
+        ChunkingSerializerProvider,
+    )
+    from docling_core.transforms.serializer.markdown import MarkdownTableSerializer
+
+    class CustomSerializerProvider(ChunkingSerializerProvider):
+        def get_serializer(self, doc):
+            return ChunkingDocSerializer(
+                doc=doc,
+                table_serializer=MarkdownTableSerializer()
+            )
+
     chunker = HybridChunker(
         tokenizer=EMBEDDING_TOKENIZER_MODEL,
         max_tokens=CHUNK_MAX_TOKENS,

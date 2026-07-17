@@ -4,7 +4,6 @@ from xml.dom import NotFoundErr
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.jobs.query_kb import query_kb_job
 from app.core.queue import query_kb_queue
 from app.config.database import get_db
 from app.dependencies import get_current_user
@@ -54,13 +53,13 @@ def query_rag(
 
         # 2. Lancement du job de recherche dans la base de connaissances via RQ
         job = query_kb_queue.enqueue(
-            query_kb_job,
+            "app.jobs.query_kb.query_kb_job",
             query=query.query,
             model=model,
             collection_id=collection.id,
             conversation_id=conversation.id if conversation else None,
             top_k=top_k,
-            user=current_user
+            user_id=current_user.id
         )
 
         return JobResponse(

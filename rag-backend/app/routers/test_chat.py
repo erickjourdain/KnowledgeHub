@@ -5,7 +5,6 @@ from sqlalchemy.orm import Session
 from app.core.queue import query_kb_test
 from app.config.database import get_db
 from app.dependencies import get_current_user
-from app.jobs.query_test import query_test
 from app.models.user import User
 from app.schemas import JobResponse, RagQuery
 from app.services.collections import get_collection_without_relations
@@ -42,7 +41,7 @@ def chat_query(
             conversation_id = None
         
         job = query_kb_test.enqueue(
-            query_test,
+            "app.jobs.query_test.query_test",
             query=query.query,
             collection_id=query.collection_id,
             conversation_id=conversation_id

@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 
 from app.core.queue import ingestion_queue, redis_conn
 from app.config.database import get_db
-from app.jobs.ingestion import ingestion_job
 from app.models import User, RoleEnum, Document, JobIngestion, DocumentChunk
 from app.schemas import (
     CollectionCreate,
@@ -369,7 +368,7 @@ def upload_document_to_collection(
 
         # 4. Lancement du job d'ingestion dans la queue RQ
         job = ingestion_queue.enqueue(
-            ingestion_job,
+            "app.jobs.ingestion.ingestion_job",
             filename=file.filename,
             collection_id=collection_id,
             temp_dir=temp_dir,
@@ -452,7 +451,7 @@ def reindex_collection_or_document(
 
             # Lancement du job d'ingestion RQ
             job = ingestion_queue.enqueue(
-                ingestion_job,
+                "app.jobs.ingestion.ingestion_job",
                 filename=doc_title,
                 collection_id=collection_id,
                 temp_dir=temp_dir,

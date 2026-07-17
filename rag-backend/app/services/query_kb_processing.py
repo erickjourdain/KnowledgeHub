@@ -1,4 +1,3 @@
-from accelerate import scheduler
 from PIL import ExifTags
 from collections import defaultdict
 import heapq
