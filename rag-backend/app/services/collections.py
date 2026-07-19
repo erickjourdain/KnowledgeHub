@@ -7,14 +7,18 @@ from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import lazyload, raiseload, Session
 
 from app.schemas import CollectionCreate, CollectionListResponse, CollectionResponse, CollectionUpdate
-from app.models import Collection, Document, DocumentChunk, RoleEnum, User, collection_users, JobIngestion, JobQueryKb, Conversation, Message
+from app.models import Collection, Document, DocumentChunk, RoleEnum, User, collection_users, collection_managers, JobIngestion, JobQueryKb, Conversation, Message
 from app.utils.directory import get_knowledge_base_dir
 
 
-def check_is_gestionnaire(collection: CollectionResponse, user: User) -> bool:
+def check_is_gestionnaire(collection_id: int, user: User, db: Session) -> bool:
     """Vérifie si l'utilisateur est gestionnaire de la collection"""
-
-    return bool(collection.creator_id == user.id and user.role == RoleEnum.GESTIONNAIRE)
+    if user.role not in [RoleEnum.GESTIONNAIRE, RoleEnum.ADMIN]:
+        return False
+    return db.query(func.count()).select_from(collection_managers).filter(
+        collection_managers.c.collection_id == collection_id,
+        collection_managers.c.user_id == user.id
+    ).scalar() > 0
 
 
 def get_collection_without_relations(
@@ -31,10 +35,10 @@ def get_collection_without_relations(
         if user.role == RoleEnum.ADMIN:
             collection = db.query(Collection).options(raiseload("*")) \
                 .filter(Collection.id == collection_id).first()
-        # Les gestionnaires ont accès aux collections qu'ils ont créées ou auxquelles ils sont associés
+        # Les gestionnaires ont accès aux collections qu'ils ont créées, dont ils sont gestionnaires, ou auxquelles ils sont associés
         elif user.role == RoleEnum.GESTIONNAIRE:
             collection = db.query(Collection).options(raiseload("*")) \
-                .filter(Collection.id == collection_id, (Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)).first()    
+                .filter(Collection.id == collection_id, (Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)).first()    
         # Les utilisateurs ont accès aux collections auxquelles ils sont associés
         else:
             collection = db.query(Collection).options(raiseload("*")) \
@@ -53,11 +57,16 @@ def get_collection_without_relations(
         nb_users = db.query(func.count(collection_users.c.user_id)) \
             .filter(collection_users.c.collection_id == collection_id).scalar()
 
+        # On récupère les IDs des gestionnaires associés à la collection
+        manager_ids = [r[0] for r in db.query(collection_managers.c.user_id) \
+            .filter(collection_managers.c.collection_id == collection_id).all()]
+
         response = CollectionListResponse.model_validate(collection)
 
-        # On ajoute les compteurs à la collection
+        # On ajoute les compteurs et gestionnaires à la collection
         response.authorized_users_count = nb_users
         response.documents_count = nb_documents
+        response.manager_ids = manager_ids
 
         return response
     
@@ -87,16 +96,16 @@ def get_collections_without_relations(
             else:
                 collections = db.query(Collection).options(raiseload("*")) \
                     .offset(offset).limit(limit).all()
-        # Les gestionnaires ont accès aux collections qu'ils ont créées ou auxquelles ils sont associés
+        # Les gestionnaires ont accès aux collections qu'ils ont créées, dont ils sont gestionnaires, ou auxquelles ils sont associés
         elif user.role == RoleEnum.GESTIONNAIRE:
             if search:
                 collections = db.query(Collection).options(raiseload("*")) \
-                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)) \
                     .filter(Collection.name.like(f'%{search}%')) \
                     .offset(offset).limit(limit).all()
             else:
                 collections = db.query(Collection).options(raiseload("*")) \
-                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)) \
                     .offset(offset).limit(limit).all()
         # Les utilisateurs ont accès aux collections auxquelles ils sont associés
         else:
@@ -119,12 +128,16 @@ def get_collections_without_relations(
             # On compte le nombre d'utilisateurs associés à la collection
             nb_users = db.query(func.count(collection_users.c.user_id)) \
                 .filter(collection_users.c.collection_id == collection.id).scalar()
+            # On récupère les IDs des gestionnaires associés à la collection
+            manager_ids = [r[0] for r in db.query(collection_managers.c.user_id) \
+                .filter(collection_managers.c.collection_id == collection.id).all()]
 
             response = CollectionListResponse.model_validate(collection)
 
-            # On ajoute les compteurs à la collection
+            # On ajoute les compteurs et gestionnaires à la collection
             response.authorized_users_count = nb_users
             response.documents_count = nb_documents
+            response.manager_ids = manager_ids
 
             responses.append(response)
 
@@ -148,11 +161,11 @@ def get_nb_collections(db: Session, user: User, search: str | None = None) -> in
         elif user.role == RoleEnum.GESTIONNAIRE:
             if search:
                 return db.query(func.count(Collection.id)) \
-                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)) \
                     .filter(Collection.name.like(f'%{search}%')).scalar()
             else:
                 return db.query(func.count(Collection.id)) \
-                    .filter((Collection.creator_id == user.id) | Collection.authorized_users.any(id=user.id)) \
+                    .filter((Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)) \
                     .scalar()
         else:
             if search:
@@ -190,6 +203,9 @@ def create_collection(collection: CollectionCreate, user: User, db: Session) -> 
         db.add(new_collection)
         db.commit()
 
+        # Add the creator as the first manager by default
+        append_manager(cast(int, new_collection.id), cast(int, user.id), db)
+
         return get_collection_without_relations(cast(int, new_collection.id), user, db)
     except Exception as e:
         print(f"Error in create_collection: {e}")
@@ -222,6 +238,7 @@ def delete_collection(collection_id: int, collection_uuid: str, db: Session) -> 
         # Supprimer les associations d'utilisateurs autorisés dans la table de jointure
         # (nécessaire pour éviter les erreurs de clé étrangère)
         db.execute(collection_users.delete().where(collection_users.c.collection_id == collection_id))
+        db.execute(collection_managers.delete().where(collection_managers.c.collection_id == collection_id))
 
         # Supprimer les jobs liés à la collection
         db.query(JobIngestion).filter(JobIngestion.collection_id == collection_id).delete()
@@ -306,6 +323,52 @@ def remove_user(collection_id: int, user_id: int, db: Session) -> bool:
     except Exception as e:
         db.rollback()
         print(f"Error in append user: {e}")
+        raise e
+
+
+def append_manager(collection_id: int, user_id: int, db: Session) -> bool:
+    """Ajouter un gestionnaire à une collection"""
+    try:
+        collection = db.query(Collection).filter(Collection.id == collection_id) \
+            .options(lazyload(Collection.managers)).first()
+        if not collection:
+            raise NoResultFound("Collection non trouvée")
+        
+        user = db.query(User).filter(User.id == user_id) \
+            .options(raiseload("*")).first()
+        if not user:
+            raise NoResultFound("Utilisateur non trouvé")
+
+        if user not in collection.managers:
+            collection.managers.append(user)
+            db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Error in append manager: {e}")
+        raise e
+    
+
+def remove_manager(collection_id: int, user_id: int, db: Session) -> bool:
+    """Retirer un gestionnaire d'une collection"""
+    try:
+        collection = db.query(Collection).filter(Collection.id == collection_id) \
+            .options(lazyload(Collection.managers)).first()
+        if not collection:
+            raise NoResultFound("Collection non trouvée")
+        
+        user = db.query(User).filter(User.id == user_id) \
+            .options(raiseload("*")).first()
+        if not user:
+            raise NoResultFound("Utilisateur non trouvé")
+
+        if user in collection.managers:
+            collection.managers.remove(user)
+            db.commit()
+        return True
+    except Exception as e:
+        db.rollback()
+        print(f"Error in remove manager: {e}")
         raise e
 
 

@@ -2,7 +2,7 @@ from app.config.database import Base
 from app.models.enum import RoleEnum
 from app.models.user import User
 from app.models.document import Document, DocumentChunk
-from app.models.collection import Collection, collection_users
+from app.models.collection import Collection, collection_users, collection_managers
 from app.models.job import JobIngestion, JobQueryKb
 from app.models.conversation import Conversation, Message
 
@@ -14,6 +14,7 @@ __all__ = [
     "DocumentChunk",
     "Collection",
     "collection_users",
+    "collection_managers",
     "JobIngestion",
     "JobQueryKb",
     "Conversation",

@@ -6,6 +6,7 @@ interface BaseCollection {
   description: string;
   modele: string;
   creator_id: number;
+  manager_ids?: number[];
   created_at: Date;
   updated_at: Date;
 }

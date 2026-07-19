@@ -2,13 +2,14 @@ import os
 from typing import List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
-from rq.job import JobStatus, Job
+from rq.job import JobStatus
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 
 from app.core.queue import ingestion_queue, redis_conn
 from app.config.database import get_db
-from app.models import User, RoleEnum, Document, JobIngestion, DocumentChunk
+from app.models import User, RoleEnum, Document, DocumentChunk, collection_managers
 from app.schemas import (
     CollectionCreate,
     CollectionResponse, 
@@ -35,7 +36,9 @@ from app.services.collections import (
     get_nb_collections,
     remove_user,
     update_collection,
-    check_collection_has_active_jobs
+    check_collection_has_active_jobs,
+    append_manager,
+    remove_manager
 )
 from app.services.documents import(
     delete_document,
@@ -150,7 +153,7 @@ def maj_collection(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -178,7 +181,7 @@ def sup_collection(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -212,7 +215,7 @@ def remove_document_from_collection(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -243,7 +246,7 @@ def users_authorised(
         collection = get_collection_without_relations(collection_id=collection_id, user=current_user, db=db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -282,7 +285,7 @@ def add_user_to_collection(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -311,7 +314,7 @@ def remove_user_from_collection(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -349,7 +352,7 @@ def upload_document_to_collection(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -400,7 +403,7 @@ def reindex_collection_or_document(
         collection = get_collection_without_relations(collection_id, current_user, db)
         if current_user.role != RoleEnum.ADMIN and \
             collection is not None and \
-            not check_is_gestionnaire(collection, current_user):
+            not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
         if not collection:
@@ -506,3 +509,118 @@ def get_chunk(
     except Exception as e:
         print(f"Error in get_chunk: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération du chunk")
+
+
+@router.get("/{collection_id}/managers", response_model=List[UsersInCollection])
+def get_collection_managers_status(
+    collection_id: int,
+    users: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Tester si la liste des utilisateurs sont gestionnaires de la collection"""
+    try:
+        collection = get_collection_without_relations(collection_id=collection_id, user=current_user, db=db)
+        if current_user.role != RoleEnum.ADMIN and \
+            collection is not None and \
+            not check_is_gestionnaire(collection.id, current_user, db):
+            raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+        
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection non trouvée")
+
+        status_list: List[UsersInCollection] = []
+        list_users = users.split(",")
+        for user_id_str in list_users:
+            user_id = int(user_id_str.strip())
+            is_mgr = db.query(func.count()).select_from(collection_managers).filter(
+                collection_managers.c.collection_id == collection_id,
+                collection_managers.c.user_id == user_id
+            ).scalar() > 0
+            status_list.append(
+                UsersInCollection(
+                    id=user_id,
+                    authorized=is_mgr
+                )
+            )
+
+        return status_list
+    except Exception as e:
+        print(f"Error in get_collection_managers_status: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la récupération du statut des gestionnaires")
+
+
+@router.post("/{collection_id}/managers/{user_id}", response_model=BackendResponse)
+def add_manager_to_collection(
+    collection_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Ajouter un gestionnaire à une collection (ADMIN ou gestionnaire de la collection)"""
+    try:
+        collection = get_collection_without_relations(collection_id, current_user, db)
+        if current_user.role != RoleEnum.ADMIN and \
+            collection is not None and \
+            not check_is_gestionnaire(collection.id, current_user, db):
+            raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+        
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection non trouvée")
+        
+        # Verify user to add is GESTIONNAIRE
+        user_to_add = db.query(User).filter(User.id == user_id).first()
+        if not user_to_add:
+            raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        if user_to_add.role not in [RoleEnum.GESTIONNAIRE, RoleEnum.ADMIN]:
+            raise HTTPException(status_code=400, detail="L'utilisateur doit avoir le rôle GESTIONNAIRE ou ADMIN")
+        
+        append_manager(collection_id=collection_id, user_id=user_id, db=db)
+    
+        return BackendResponse(
+            status=True,
+            message="Gestionnaire ajouté à la collection"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in add manager: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de l'ajout du gestionnaire")
+
+
+@router.delete("/{collection_id}/managers/{user_id}", response_model=BackendResponse)
+def remove_manager_from_collection(
+    collection_id: int,
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Retirer un gestionnaire d'une collection (ADMIN ou gestionnaire de la collection)"""
+    try:
+        collection = get_collection_without_relations(collection_id, current_user, db)
+        if current_user.role != RoleEnum.ADMIN and \
+            collection is not None and \
+            not check_is_gestionnaire(collection.id, current_user, db):
+            raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+        
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection non trouvée")
+        
+        # Enforce at least one manager constraint
+        mgr_count = db.query(func.count()).select_from(collection_managers).filter(
+            collection_managers.c.collection_id == collection_id
+        ).scalar()
+        if mgr_count <= 1:
+            raise HTTPException(status_code=400, detail="La collection doit avoir au moins un gestionnaire")
+        
+        remove_manager(collection_id=collection_id, user_id=user_id, db=db)
+    
+        return BackendResponse(
+            status=True,
+            message="Gestionnaire supprimé de la collection"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in remove manager: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors du retrait du gestionnaire")

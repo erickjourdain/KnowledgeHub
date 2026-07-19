@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import cast
 
 from fastapi import APIRouter, Depends, HTTPException
 from rq.job import Job
@@ -49,12 +50,12 @@ def get_ingestion_job(
     if current_user.role in [RoleEnum.ADMIN]:
         return job
     
-    # GESTIONNAIRE a accès s'il est le créateur
+    # GESTIONNAIRE a accès s'il est gestionnaire de la collection associée au job
     if current_user.role in [RoleEnum.GESTIONNAIRE]:
         collection = db.query(Collection).filter(Collection.id == job.collection_id).first()
         if not collection:
             raise HTTPException(status_code=404, detail="Collection du job non trouvé")
-        if int(str(collection.creator_id)) == int(str(current_user.id)):
+        if check_is_gestionnaire(cast(int, collection.id), current_user, db):
             return job
         
     raise HTTPException(status_code=403, detail="Vous n'avez pas la permission d'accèder à ce job")
@@ -73,8 +74,8 @@ def get_insertion_job_collection(
     if not collection:
         raise HTTPException(status_code=404, detail="Collection non trouvée")
     
-    if current_user.role in [RoleEnum.GESTIONNAIRE] and int(str(collection.creator_id)) != int(str(current_user.id)):
-        raise HTTPException(status_code=403, detail="Vous ne pouvez accèder qu'à vos propres collections") 
+    if current_user.role in [RoleEnum.GESTIONNAIRE] and not check_is_gestionnaire(cast(int, collection.id), current_user, db):
+        raise HTTPException(status_code=403, detail="Vous ne pouvez accèder qu'aux collections dont vous êtes gestionnaire") 
    
     response =  db.query(JobIngestion).order_by(JobIngestion.created_at.desc()).filter(and_(
         JobIngestion.created_at + timedelta(days=5) > datetime.now() 
@@ -102,9 +103,9 @@ def get_kb_job(
     if not collection:
         raise HTTPException(status_code=404, detail="Collection du job non trouvé")
     
-    # GESTIONNAIRE a accès s'il est le créateur de la collection associée au job
+    # GESTIONNAIRE a accès s'il est gestionnaire de la collection associée au job
     if current_user.role in [RoleEnum.GESTIONNAIRE]:
-        if check_is_gestionnaire(collection, current_user):
+        if check_is_gestionnaire(cast(int, collection.id), current_user, db):
             return job
 
     # les autres utilisateurs s'ils sont l'initiateur du job
@@ -129,7 +130,7 @@ def get_kb_job_collection_user(
         raise HTTPException(status_code=404, detail="Collection non trouvée")
     
     if current_user.role in [RoleEnum.GESTIONNAIRE]:
-        if not check_is_gestionnaire(collection, current_user) and current_user.id != user_id:
+        if not check_is_gestionnaire(cast(int, collection.id), current_user, db) and current_user.id != user_id:
             raise HTTPException(status_code=403, detail="Vous n'avez pas accès à ces informations") 
        
     response =  db.query(JobQueryKb).order_by(JobQueryKb.created_at.desc()).filter(and_(

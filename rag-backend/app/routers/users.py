@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
@@ -57,7 +57,7 @@ def get_users(
     skip: int = 0,
     limit: int = 100,
     is_active: bool | None = None,
-    role: RoleEnum | None = None,
+    role: list[RoleEnum] | None = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -67,8 +67,8 @@ def get_users(
     query = db.query(User)
     if is_active is not None:
         query = query.filter(User.is_active == is_active)
-    if role is not None:
-        query = query.filter(User.role == role)
+    if role is not None and len(role) > 0:
+        query = query.filter(User.role.in_(role))
 
     total = query.count()
     data = query.offset(skip).limit(limit).all()

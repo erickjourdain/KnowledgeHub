@@ -20,12 +20,13 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import SettingsIcon from '@mui/icons-material/Settings';
 import PeopleIcon from '@mui/icons-material/People';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import DeleteIcon from '@mui/icons-material/Delete';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import FolderIcon from '@mui/icons-material/Folder';
 import ErrorPage from '@components/ErrorPage';
 import { fetchCollection } from '@api/collections';
-import { isAdmin, isCreator } from '@utils/security';
+import { isAdmin } from '@utils/security';
 import { AppError } from '@utils/errors';
 
 export const Route = createFileRoute(
@@ -37,7 +38,7 @@ export const Route = createFileRoute(
         queryKey: ['collections', String(id)],
         queryFn: () => fetchCollection(id)
       })
-      if (isAdmin(auth.user) || isCreator(auth.user, collection.creator_id)) {
+      if (isAdmin(auth.user) || (collection.manager_ids && auth.user && collection.manager_ids.includes(auth.user.id))) {
         return collection;
       } else {
         throw new AppError("Vous n'avez pas l'autorisation d'administrer cette collection.", 403);
@@ -82,6 +83,12 @@ const ITEMS: Item[] = [
     label: 'Utilisateurs autorisés',
     icon: <PeopleIcon />,
     path: 'users'
+  },
+  {
+    key: 'managers',
+    label: 'Gestionnaires',
+    icon: <ManageAccountsIcon />,
+    path: 'managers'
   },
   {
     key: 'update',

@@ -14,6 +14,14 @@ collection_users = Table(
     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True)
 )
 
+# Table de relation many-to-many pour les gestionnaires
+collection_managers = Table(
+    'collection_managers',
+    Base.metadata,
+    Column('collection_id', Integer, ForeignKey('collections.id', ondelete='CASCADE'), primary_key=True),
+    Column('user_id', Integer, ForeignKey('users.id', ondelete='CASCADE'), primary_key=True)
+)
+
 class Collection(Base):
     __tablename__ = "collections"
 
@@ -30,6 +38,11 @@ class Collection(Base):
     creator = relationship(
         "User",
         back_populates="created_collections"
+    )
+    managers = relationship(
+        "User",
+        secondary=collection_managers,
+        back_populates="managed_collections"
     )
     authorized_users = relationship(
         "User",

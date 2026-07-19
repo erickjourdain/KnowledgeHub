@@ -148,6 +148,57 @@ export const fetchCollectionUsersStatut = async (
   }
 }
 
+/**
+ * Fetch manager status of users for a collection.
+ */
+export const fetchCollectionManagersStatut = async (
+  collectionId: string | number, users: number[]
+): Promise<UsersInCollection[]> => {
+  try {
+    const usersList = users.join(',');
+    const response = await instance.get(
+      `/collections/${collectionId}/managers?users=${usersList}`
+    );
+    return response.data as UsersInCollection[];
+  } catch (error) {
+    throw new Error("Impossible de récupérer l'information sur les gestionnaires");
+  }
+}
+
+/**
+ * Add a manager to a collection.
+ */
+export const addCollectionManager = async (
+  collectionId: string | number, userId: string | number
+): Promise<ApiMessage> => {
+  try {
+    const response = await instance.post(
+      `/collections/${collectionId}/managers/${userId}`
+    );
+    return response.data as ApiMessage;
+  } catch (error: any) {
+    const msg = error?.response?.data?.detail || "Impossible d'ajouter le gestionnaire";
+    throw new Error(msg);
+  }
+}
+
+/**
+ * Remove a manager from a collection.
+ */
+export const deleteCollectionManager = async (
+  collectionId: string | number, userId: string | number
+): Promise<ApiMessage> => {
+  try {
+    const response = await instance.delete(
+      `/collections/${collectionId}/managers/${userId}`
+    );
+    return response.data as ApiMessage;
+  } catch (error: any) {
+    const msg = error?.response?.data?.detail || "Impossible de supprimer le gestionnaire";
+    throw new Error(msg);
+  }
+}
+
 export interface ChunkDetail {
   id: number;
   chunk_text: string;

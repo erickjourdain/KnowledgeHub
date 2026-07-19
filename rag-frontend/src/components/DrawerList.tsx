@@ -28,7 +28,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "../providers/authProvider";
-import { isAdmin, isCreator, isGestionnaire } from "@utils/security";
+import { isAdmin, isGestionnaire } from "@utils/security";
 import { collectionAtom } from "@store/collectionStore";
 import { jobIngestionIdsAtom } from "@store/jobIngestionStore";
 import { jobReindexIdsAtom } from "@store/jobReindexStore";
@@ -225,7 +225,7 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
               {renderItem("Chat", <ChatIcon />, handleChat, isChatActive)}
               {renderItem("Recherche avancée", <ManageSearchIcon />, handleDocument, isDocumentsActive)}
               
-              {(isAdmin(auth.user) || isCreator(auth.user, collection.creator_id)) &&
+              {(isAdmin(auth.user) || (collection.manager_ids && auth.user && collection.manager_ids.includes(auth.user.id))) &&
                 renderItem("Admin", <SettingsIcon />, handleAdmin, isAdminActive)
               }
             </>

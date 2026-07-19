@@ -23,6 +23,11 @@ class User(Base):
         "Collection",
         back_populates="creator"
     )
+    managed_collections = relationship(
+        "Collection",
+        secondary="collection_managers",
+        back_populates="managers"
+    )
     accessible_collections = relationship(
         "Collection",
         secondary="collection_users",

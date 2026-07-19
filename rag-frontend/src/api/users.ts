@@ -4,12 +4,21 @@ import instance from "./instance";
 import { AxiosError } from "axios";
 
 const fetchUsers = 
-  async (page: number=1, size: number=20, is_active?: boolean | null, search?: string | null): Promise<ApiData<User>> => {
+  async (page: number=1, size: number=20, is_active?: boolean | null, search?: string | null, role?: string | string[] | null): Promise<ApiData<User>> => {
   try {
     const offset = (page - 1 ) * size;
     let params = `offset=${offset}&limit=${size}`;
     if (is_active !== undefined && is_active !== null) params += `&is_active=${is_active}`;
     if (search !== undefined && search !== null) params += `&search=${encodeURIComponent(search)}`;
+    if (role !== undefined && role !== null) {
+      if (Array.isArray(role)) {
+        role.forEach(r => {
+          params += `&role=${r}`;
+        });
+      } else {
+        params += `&role=${role}`;
+      }
+    }
     const response = await instance.get(`/users?${params}`);
     return response.data as ApiData<User>;
   } catch (error) {

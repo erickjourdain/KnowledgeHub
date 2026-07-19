@@ -216,6 +216,7 @@ class CollectionResponse(CollectionBase):
     id: int
     uuid: str
     creator_id: int
+    manager_ids: List[int] = []
     created_at: datetime
     updated_at: datetime
 
