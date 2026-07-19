@@ -21,12 +21,70 @@ from app.services.collections import check_is_gestionnaire, get_collection_witho
 router = APIRouter()
 
 @router.get("/{job_id}", response_model=JobResponse)
-def get_job(job_id: str, current_user: User = Depends(get_current_user)):
-    """Récupérer le statut et les détails d'un job par son ID."""
+def get_job(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Récupérer le statut et les détails d'un job par son ID avec contrôle d'accès."""
     try:
         job = Job.fetch(job_id, connection=redis_conn)
     except Exception:
         raise HTTPException(status_code=404, detail="Job non trouvé")
+    
+    # Vérification des autorisations (sécurité anti-IDOR/BOLA)
+    db_ingestion = db.query(JobIngestion).filter(JobIngestion.uuid == job_id).first()
+    db_query = db.query(JobQueryKb).filter(JobQueryKb.uuid == job_id).first()
+
+    has_permission = False
+
+    if db_query:
+        if current_user.role == RoleEnum.ADMIN:
+            has_permission = True
+        elif current_user.role == RoleEnum.GESTIONNAIRE:
+            if check_is_gestionnaire(cast(int, db_query.collection_id), current_user, db):
+                has_permission = True
+        elif db_query.creator_id == current_user.id:
+            has_permission = True
+    elif db_ingestion:
+        if current_user.role == RoleEnum.ADMIN:
+            has_permission = True
+        elif current_user.role == RoleEnum.GESTIONNAIRE:
+            if check_is_gestionnaire(cast(int, db_ingestion.collection_id), current_user, db):
+                has_permission = True
+    else:
+        # Si le job n'est pas encore en base de données ou est un job de test
+        collection_id = job.kwargs.get("collection_id")
+        user_id = job.kwargs.get("user_id")
+
+        if collection_id is None and len(job.args) > 1:
+            func_name = job.func_name
+            if func_name == "app.jobs.ingestion.ingestion_job":
+                collection_id = job.args[1] if len(job.args) > 1 else None
+            elif func_name == "app.jobs.query_kb.query_kb_job":
+                collection_id = job.args[2] if len(job.args) > 2 else None
+                user_id = job.args[5] if len(job.args) > 5 else None
+            elif func_name == "app.jobs.query_test.query_test":
+                collection_id = job.args[1] if len(job.args) > 1 else None
+
+        if current_user.role == RoleEnum.ADMIN:
+            has_permission = True
+        else:
+            if user_id is not None and user_id == current_user.id:
+                has_permission = True
+            elif collection_id is not None:
+                if current_user.role == RoleEnum.GESTIONNAIRE and check_is_gestionnaire(cast(int, collection_id), current_user, db):
+                    has_permission = True
+                else:
+                    collection_obj = get_collection_without_relations(collection_id, current_user, db)
+                    if collection_obj is not None:
+                        # Seuls les administrateurs et gestionnaires peuvent voir l'ingestion, les utilisateurs normaux ne voient que les requêtes
+                        func_name = job.func_name
+                        if func_name in ["app.jobs.query_kb.query_kb_job", "app.jobs.query_test.query_test"]:
+                            has_permission = True
+
+    if not has_permission:
+        raise HTTPException(status_code=403, detail="Vous n'avez pas la permission d'accéder à ce job")
     
     return JobResponse(
         job_id=job_id,
@@ -34,6 +92,7 @@ def get_job(job_id: str, current_user: User = Depends(get_current_user)):
         result=job.result if job.is_finished else None,
         error=job.exc_info if job.is_failed else None
     )
+
 
 @router.get("/ingestion/{uuid}", response_model=JobIngestionResponse)
 def get_ingestion_job(

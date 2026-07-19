@@ -2,6 +2,7 @@ import os
 from typing import List, Optional, cast
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from rq.job import JobStatus
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -24,7 +25,7 @@ from app.schemas import (
 )
 from app.dependencies import get_current_user
 from app.utils.directory import get_temp_dir, get_knowledge_base_dir
-from app.utils.file import allowed_file, save_temp_file
+from app.utils.file import allowed_file, save_temp_file, secure_filename
 from app.services.collections import (
     append_user,
     check_is_gestionnaire,
@@ -230,6 +231,46 @@ def remove_document_from_collection(
         print(f"Error in delete document {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la suppression du document")
 
+
+@router.get("/{collection_id_or_slug}/documents/{document_id}/download")
+def download_document(
+    collection_id_or_slug: str,
+    document_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Télécharger ou afficher un document de la collection (si l'utilisateur y a accès)"""
+    try:
+        # Valider l'accès de l'utilisateur à la collection
+        collection = get_collection_without_relations(collection_id_or_slug, current_user, db)
+        if not collection:
+            raise HTTPException(status_code=404, detail="Collection non trouvée ou non accessible")
+
+        # Récupérer les métadonnées du document
+        document = db.query(Document).filter(
+            Document.id == document_id, 
+            Document.collection_id == collection.id
+        ).first()
+        if not document:
+            raise HTTPException(status_code=404, detail="Document non trouvé dans cette collection")
+
+        # Résoudre le chemin du fichier physique
+        file_path = os.path.join(get_knowledge_base_dir(), f"{collection.uuid}", str(document.title))
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Le fichier physique est introuvable sur le serveur")
+
+        return FileResponse(
+            path=file_path,
+            filename=str(document.title),
+            media_type="application/octet-stream"
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error in download_document: {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors du téléchargement du document")
+
+
 @router.get("/{collection_id_or_slug}/users")
 def users_authorised(
     collection_id_or_slug: str,
@@ -351,12 +392,19 @@ def upload_document_to_collection(
             not check_is_gestionnaire(collection.id, current_user, db):
             raise HTTPException(status_code=403, detail="Permissions insuffisantes")
         
-        # 2. Vérification du type de fichier
-        if (file.filename is None) or (not allowed_file(file.filename)):
+        # 2. Vérification du nom et du type de fichier
+        if file.filename is None:
+            raise HTTPException(status_code=400, detail="Nom de fichier invalide")
+        
+        # Assainir le nom de fichier immédiatement pour éviter la traversée de répertoire
+        file.filename = secure_filename(file.filename)
+
+        if not allowed_file(file.filename):
             raise HTTPException(
                 status_code=400,
                 detail="Type de fichier non autorisé. Extensions autorisées: .pdf, .docx"
             )
+
 
         # 3.  Enregistrement temporaire
         temp_dir = get_temp_dir()

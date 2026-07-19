@@ -18,6 +18,7 @@ from app.routers import chat, collections, conversations, jobs, messages, rag, t
 from app.schemas import BackendResponse
 from app.utils.directory import get_knowledge_base_dir
 from app.core.queue import redis_conn
+from app.config.config import ALLOWED_ORIGINS
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -56,10 +57,10 @@ app = FastAPI(
 # Configuration CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Inclure les routers
@@ -83,10 +84,11 @@ if not os.path.exists(static_dir):
 
 app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
 
-# Servir les fichiers statiques (knowledge base)
+# Les fichiers statiques de la base de connaissances (knowledge base) ne sont plus montés publiquement pour des raisons de sécurité.
+# L'accès aux documents est désormais restreint et passe par un endpoint authentifié.
 knowledge_base_dir = get_knowledge_base_dir()
 knowledge_base_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/kb", StaticFiles(directory=knowledge_base_dir), name="knowledge_base")
+
 
 @app.get("/api", response_model=BackendResponse)
 def root():

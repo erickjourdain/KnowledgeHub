@@ -28,29 +28,29 @@ interface WSContextType {
 
 const WSContext = createContext<WSContextType | undefined>(undefined);
 
-function getWebSocketUrl(token: string): string {
+function getWebSocketUrl(): string {
   const apiUrl = import.meta.env.VITE_API_URL || "";
   const loc = window.location;
   const wsProtocol = loc.protocol === "https:" ? "wss:" : "ws:";
 
   // Check if VITE_API_URL is relative (starts with '/' and NOT '//', or is empty)
   if (!apiUrl || (apiUrl.startsWith("/") && !apiUrl.startsWith("//"))) {
-    return `${wsProtocol}//${loc.host}/ws/jobs?token=${token}`;
+    return `${wsProtocol}//${loc.host}/ws/jobs`;
   }
 
   // If VITE_API_URL is absolute (e.g. http://localhost:8000/api, //localhost:8000/api)
   const cleanUrl = apiUrl.replace(/\/api\/?$/, "");
 
   if (cleanUrl.startsWith("http://")) {
-    return cleanUrl.replace("http://", "ws://") + `/ws/jobs?token=${token}`;
+    return cleanUrl.replace("http://", "ws://") + `/ws/jobs`;
   } else if (cleanUrl.startsWith("https://")) {
-    return cleanUrl.replace("https://", "wss://") + `/ws/jobs?token=${token}`;
+    return cleanUrl.replace("https://", "wss://") + `/ws/jobs`;
   } else if (cleanUrl.startsWith("//")) {
-    return `${wsProtocol}${cleanUrl}/ws/jobs?token=${token}`;
+    return `${wsProtocol}${cleanUrl}/ws/jobs`;
   }
 
   // Fallback
-  return `${wsProtocol}//${cleanUrl}/ws/jobs?token=${token}`;
+  return `${wsProtocol}//${cleanUrl}/ws/jobs`;
 }
 
 export function WebSocketProvider({
@@ -89,10 +89,11 @@ export function WebSocketProvider({
       return;
     }
 
-    const wsUrl = getWebSocketUrl(token);
+    const wsUrl = getWebSocketUrl();
     console.log("WebSocket: attempting to connect to", wsUrl);
 
-    const ws = new WebSocket(wsUrl);
+    // Pass the access token securely using subprotocols instead of query parameter
+    const ws = new WebSocket(wsUrl, ["access_token", token]);
 
     socketRef.current = ws;
 

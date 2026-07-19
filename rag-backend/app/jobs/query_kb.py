@@ -99,12 +99,7 @@ def query_kb_job(
         )
 
     except Exception as e:
-        # Mettre à jour le job avec l'erreur
-        if job_query_kb is not None:
-            job_query_kb.status = "failed"
-            job_query_kb.error = str(e)
-            db.commit()
-        
+        # 1. Toujours notifier le WebSocket en premier via Redis (qui fonctionne indépendamment de la DB)
         try:
             publish_progress(
                 job.id,
@@ -116,6 +111,16 @@ def query_kb_job(
             )
         except Exception as pe:
             print(f"Erreur lors de la publication de la progression d'erreur: {pe}")
+
+        # 2. Mettre à jour la base de données de manière sécurisée
+        if job_query_kb is not None:
+            try:
+                db.rollback()  # Annuler la transaction en échec pour nettoyer la session
+                job_query_kb.status = "failed"
+                job_query_kb.error = str(e)
+                db.commit()
+            except Exception as dbe:
+                print(f"Impossible de mettre à jour le statut du job en base de données : {dbe}")
             
         raise e
 

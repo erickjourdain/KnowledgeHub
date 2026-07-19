@@ -169,9 +169,17 @@ def get_current_user_info(current_user: User = Depends(get_current_user)):
 @router.put("/change-password", response_model=BackendResponse)
 def change_password(
     password_update: PasswordUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
-    """Changer le mot de passe d'un utilisateur"""
+    """Changer le mot de passe d'un utilisateur connecté (ADMIN ou l'utilisateur concerné uniquement)"""
+    # Seul l'administrateur ou l'utilisateur connecté lui-même peut modifier son propre mot de passe
+    if current_user.role != RoleEnum.ADMIN and current_user.username != password_update.username:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Vous n'êtes pas autorisé à modifier le mot de passe de cet utilisateur"
+        )
+
     try:
         user = check_user_password(username=password_update.username, password=password_update.old_password, db=db)
         user = change_user_password(user=user, new_password=password_update.new_password, db=db)
@@ -184,7 +192,7 @@ def change_password(
     except ValueError:
         raise HTTPException(status_code=400, detail="Mot de passe incorrect")
     except Exception:
-        raise HTTPException(status_code=400, detail="Impossible de changer le mot de passe: ")
+        raise HTTPException(status_code=400, detail="Impossible de changer le mot de passe")
 
 
 def get_user_by_id_or_slug(user_id_or_slug: str, db: Session) -> User | None:

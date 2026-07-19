@@ -68,11 +68,30 @@ def ingestion_job(
         db.commit()
 
     except Exception as e:
-        # Mettre à jour le job avec l'erreur
+        # 1. Toujours notifier le WebSocket en premier via Redis (qui fonctionne indépendamment de la DB)
+        try:
+            from app.utils.redis import publish_progress
+            publish_progress(
+                job.id,
+                type="ingestion",
+                status="failed",
+                step="error",
+                progress=100,
+                message=f"Erreur: {str(e)}"
+            )
+        except Exception as pe:
+            print(f"Erreur lors de la publication de la progression d'erreur: {pe}")
+
+        # 2. Mettre à jour la base de données de manière sécurisée
         if job_ingestion is not None:
-            job_ingestion.status = job.get_status()
-            job_ingestion.error = str(e)
-            db.commit()
+            try:
+                db.rollback()  # Annuler la transaction en échec pour nettoyer la session
+                job_ingestion.status = "failed"
+                job_ingestion.error = str(e)
+                db.commit()
+            except Exception as dbe:
+                print(f"Impossible de mettre à jour le statut du job en base de données : {dbe}")
+            
         raise e
 
     finally:

@@ -45,10 +45,17 @@ KNOWLEDGE_BASE_DIR = os.getenv("KNOWLEDGE_BASE_DIR", "./knowledge_base")
 PROMPTS_DIR = os.getenv("PROMPTS_DIR", "./prompts")
 
 # Configuration de la sécurité JWT
-SECRET_KEY = os.getenv("SECRET_KEY", "your_secret_key")  # Remplacez par une valeur forte en production
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("La variable d'environnement SECRET_KEY doit être définie dans le fichier .env")
+
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 heures
 REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+# Configuration CORS (Allowed Origins)
+ALLOWED_ORIGINS_RAW = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173")
+ALLOWED_ORIGINS = [origin.strip() for origin in ALLOWED_ORIGINS_RAW.split(",") if origin.strip()]
 
 # Configuration ollama
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
@@ -92,6 +99,7 @@ print(f"  Prompts Dir: {PROMPTS_DIR}")
 
 print("=== Configuration de la sécurité ===")
 print("  Secret Key: ********")  # Sécurité : On masque la clé secrète dans les logs
+print(f"  Allowed Origins: {ALLOWED_ORIGINS}")
 
 print("=== Configuration d'Ollama ===")
 print(f"  Ollama URL: {OLLAMA_URL}")
