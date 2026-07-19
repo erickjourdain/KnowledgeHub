@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.config.database import get_db
 from app.dependencies import get_current_user
-from app.models import User, Conversation, Message
+from app.models import User, Conversation, Message, RoleEnum
 from app.schemas import PaginatedResponse, MessageResponse
 
 
@@ -24,7 +24,9 @@ def get_messages(
         if not conversation:
             raise HTTPException(status_code=404, detail="Conversation non trouvée")
         
-        if conversation.creator_id != current_user.id:
+        if conversation.creator_id != current_user.id and \
+            conversation.collection.creator_id != current_user.id and \
+            current_user.role != RoleEnum.ADMIN:
             raise HTTPException(status_code=403, detail="Accès refusé à cette conversation")
 
         # Récupérer les messages de la conversation avec pagination
@@ -32,6 +34,8 @@ def get_messages(
         count = db.query(Message).filter_by(conversation_id=conversation_id).count()
 
         return PaginatedResponse(data=messages, count=count)
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"erreur: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération des messages")  
@@ -57,14 +61,12 @@ def get_message_by_uuid(
         # Vérifier que l'utilisateur a accès à la conversation
         if conversation.creator_id != current_user.id and \
             conversation.collection.creator_id != current_user.id and \
-            current_user.role != "admin":
+            current_user.role != RoleEnum.ADMIN:
             raise HTTPException(status_code=403, detail="Accès refusé à cette conversation")
-        if not conversation:
-            raise HTTPException(status_code=404, detail="Conversation du message non trouvée")
-        if conversation.creator_id != current_user.id:
-            raise HTTPException(status_code=403, detail="Accès refusé à ce message")
 
         return message
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"erreur: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération du message")
@@ -86,7 +88,7 @@ def get_latest_message(
         # Vérifier que l'utilisateur a accès à la conversation
         if conversation.creator_id != current_user.id and \
             conversation.collection.creator_id != current_user.id and \
-            current_user.role != "admin":
+            current_user.role != RoleEnum.ADMIN:
             raise HTTPException(status_code=403, detail="Accès refusé à cette conversation")
 
         # Récupérer le dernier message de la conversation
@@ -95,6 +97,8 @@ def get_latest_message(
             raise HTTPException(status_code=404, detail="Aucun message trouvé dans cette conversation")
 
         return message
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"erreur: {e}")
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération du dernier message")    

@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useState, useEffect } from "react";
 import { Box, Grid, LinearProgress, Typography } from "@mui/material";
 import { useAtom } from "jotai";
-import { apiAutoLogin, apiLogin } from "@api/connection";
+import { apiAutoLogin, apiLogin, apiLogout } from "@api/connection";
 import { tokenAtomStorage } from "@store/authStore";
 import type { TokenResponse, User } from "@appTypes/User";
 import type { AuthState } from "@appTypes/AuthState";
@@ -9,12 +9,9 @@ import instance from "@api/instance";
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
-async function autoLogin(token: string) {
-  if (token.length) {
-    return await apiAutoLogin()
-  } else {
-    return null;
-  }
+async function autoLogin() {
+  // Tente de se connecter en s'appuyant sur le Cookie HTTPOnly
+  return await apiAutoLogin();
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -26,6 +23,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     try {
       const tokenResponse: TokenResponse = await apiLogin({ username, password });
+      // Fallback : stocker le token dans l'état local / localStorage
       setToken(tokenResponse.access_token);
       const user: User = await apiAutoLogin();
       setUser(user);
@@ -36,11 +34,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsAuthenticated(false);
       return false;
     }
-  }, []);
+  }, [setToken]);
 
   const logout = useCallback(async () => {
     try {
-      // Supprimer le token de connexion
+      // Invalider la session côté serveur en supprimant les cookies
+      await apiLogout();
+
+      // Supprimer le token de secours localement
       setToken("");
       localStorage.removeItem("auth-token");
       
@@ -69,15 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    let initialToken = "";
-    try {
-      initialToken = JSON.parse(localStorage.getItem("auth-token") || "null") || "";
-    } catch (error) {
-      console.error("Error reading auth-token from localStorage:", error);
-    }
-
     setLoading(true);
-    autoLogin(initialToken)
+    autoLogin()
       .then((user) => {
         setUser(user);
         setIsAuthenticated(!!user);

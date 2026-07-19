@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Session
 import urllib.parse
 import random
 from app.config.database import get_db
+from app.config.config import env
 from app.models import User, RoleEnum
 from app.schemas import (
     BackendResponse, 
@@ -105,6 +106,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db)
 ):
@@ -130,6 +132,24 @@ form_data.username).first()
         data={"sub": user.username, "user_id": user.id, "role": user.role.value}
     )
     
+    secure_cookie = True if env == "production" else False
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=60 * 24 * 60
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=7 * 24 * 60 * 60
+    )
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -137,7 +157,10 @@ form_data.username).first()
     }
 
 @router.post("/refresh", response_model=Token)
-def refresh_token(current_user: User = Depends(get_current_user)):
+def refresh_token(
+    response: Response,
+    current_user: User = Depends(get_current_user)
+):
     """Refresh le token d'accès"""
     access_token = create_access_token(
         data={
@@ -154,11 +177,54 @@ def refresh_token(current_user: User = Depends(get_current_user)):
         }
     )
     
+    secure_cookie = True if env == "production" else False
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=60 * 24 * 60
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=7 * 24 * 60 * 60
+    )
+    
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer"
     }
+
+@router.post("/logout", response_model=BackendResponse)
+def logout(response: Response):
+    """Déconnexion de l'utilisateur en supprimant les cookies"""
+    secure_cookie = True if env == "production" else False
+    response.set_cookie(
+        key="access_token",
+        value="",
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=0
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value="",
+        httponly=True,
+        secure=secure_cookie,
+        samesite="lax",
+        max_age=0
+    )
+    return BackendResponse(
+        status=True,
+        message="Déconnexion réussie"
+    )
 
 @router.get("/me", response_model=UserResponse)
 def get_current_user_info(current_user: User = Depends(get_current_user)):

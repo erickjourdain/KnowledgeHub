@@ -116,10 +116,79 @@ ollama pull gemma3:4b
 
 Depuis la racine du projet, lancez la construction et le démarrage des services :
 
+> [!NOTE]
+> Par défaut, l'image Docker s'appuie sur la version **CPU** de PyTorch, ce qui permet un développement rapide et léger en local (particulièrement adapté à macOS et Windows).
+> Si vous déployez sur un serveur équipé d'une carte graphique **NVIDIA GPU**, vous devez surcharger l'index de paquets de PyTorch pour télécharger la version dotée du support CUDA.
+
+#### Option A : Installation par défaut (CPU - Développement local / macOS / Windows)
 ```bash
 cd rag-backend
 docker-compose up -d --build
 ```
+
+#### Option B : Installation avec accélération GPU (NVIDIA CUDA - Production)
+1. Lancez la construction en forçant l'usage de l'index de paquets standard PyPI (qui embarque CUDA) :
+```bash
+cd rag-backend
+docker-compose build --build-arg PYTORCH_INDEX_URL=https://pypi.org/simple
+```
+2. Démarrez les conteneurs :
+```bash
+docker-compose up -d
+```
+
+> [!IMPORTANT]
+> Pour que les conteneurs puissent réellement exploiter votre carte graphique sur l'hôte, assurez-vous d'avoir installé le **NVIDIA Container Toolkit** sur votre serveur et d'ajouter le bloc de réservation GPU (`capabilities: [gpu]`) dans les services `api` et `worker` de votre `docker-compose.yml` :
+> ```yaml
+>     deploy:
+>       resources:
+>         reservations:
+>           devices:
+>             - driver: nvidia
+>               count: all
+>               capabilities: [gpu]
+> ```
+
+#### 🛠️ Installation du NVIDIA Container Toolkit (sur le serveur hôte Linux / Ubuntu / Debian)
+Si le toolkit n'est pas encore installé sur votre serveur physique, vous devez l'installer sur la machine hôte en exécutant les commandes suivantes :
+
+1. **Configurer le dépôt officiel de paquets NVIDIA :**
+```bash
+curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
+  && curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list | \
+    sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' | \
+    sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+```
+
+2. **Installer le toolkit :**
+```bash
+sudo apt-get update
+sudo apt-get install -y nvidia-container-toolkit
+```
+
+3. **Configurer le moteur Docker pour utiliser le runtime NVIDIA :**
+```bash
+sudo nvidia-ctk runtime configure --runtime=docker
+```
+
+4. **Redémarrer le démon Docker pour appliquer les modifications :**
+```bash
+sudo systemctl restart docker
+```
+
+#### 💻 Accélération GPU sous Windows (via Docker Desktop & WSL 2)
+Sous Windows, l'exécution de conteneurs Linux avec support GPU s'effectue via le moteur WSL 2. L'avantage principal est que **le NVIDIA Container Toolkit est pré-intégré** et configuré automatiquement.
+
+Pour activer le support GPU sous Windows :
+1. **Pilotes graphiques :** Installez les derniers pilotes NVIDIA officiels pour Windows sur votre machine hôte (le CUDA Toolkit hôte n'est pas requis).
+2. **WSL 2 :** Assurez-vous d'avoir installé WSL 2. Dans un terminal PowerShell en mode Administrateur :
+   ```powershell
+   wsl --install
+   ```
+3. **Docker Desktop :**
+   * Allez dans **Settings** > **General** et cochez **Use the WSL 2 based engine**.
+   * Allez dans **Settings** > **Resources** > **WSL Integration** et assurez-vous que l'intégration est activée.
+4. **Validation :** Docker Desktop mappera automatiquement l'accès GPU aux conteneurs sans configuration supplémentaire sur le système hôte. Il vous suffit de lancer la construction et le déploiement avec le bloc `reservations` standard dans votre `docker-compose.yml`.
 
 ### 3. Appliquer les Migrations de Base de Données
 

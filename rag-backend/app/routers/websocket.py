@@ -1,7 +1,7 @@
 import json
 from typing import cast
 import asyncio
-from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect, status, HTTPException
 from sqlalchemy.orm import Session
 from rq.job import Job
 
@@ -17,9 +17,11 @@ from app.services.collections import check_is_gestionnaire, get_collection_witho
 router = APIRouter()
 
 
-async def get_websocket_user(websocket: WebSocket, db: Session) -> User | None:
-    """Validate token from WebSocket query parameters or subprotocols and return the User."""
-    token = websocket.query_params.get("token")
+async def get_websocket_user(websocket: WebSocket, db: Session) -> User:
+    """Validate token from WebSocket cookies, query parameters or subprotocols and return the User."""
+    token = websocket.cookies.get("access_token")
+    if not token:
+        token = websocket.query_params.get("token")
     if not token:
         # Tenter de récupérer le token via le header Sec-WebSocket-Protocol
         protocol_header = websocket.headers.get("sec-websocket-protocol")
@@ -30,32 +32,26 @@ async def get_websocket_user(websocket: WebSocket, db: Session) -> User | None:
                 token = protocols[1]
 
     if not token:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token manquant")
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token manquant")
 
     payload = decode_token(token)
     if payload is None:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalide")
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token invalide")
 
     if payload.get("type") != "access":
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalide")
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token invalide")
 
     username: str | None = payload.get("sub")
     if username is None:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalide")
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token invalide")
 
     user = db.query(User).filter(User.username == username).first()
 
     if user is None:
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Token invalide")
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token invalide")
 
     if not bool(user.is_active):
-        await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason="Utilisateur désactivé")
-        return None
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Utilisateur désactivé")
 
     return user
 
@@ -125,8 +121,6 @@ def check_job_permission(job_id: str, user: User, db: Session) -> bool:
 async def job_ws(websocket: WebSocket, db: Session = Depends(get_db)):
     # Validate token before accepting the connection
     current_user = await get_websocket_user(websocket, db)
-    if current_user is None:
-        return  # WebSocket already closed by get_websocket_user
     
     # Accepter la connexion en retournant le sous-protocole attendu par le client
     protocol_header = websocket.headers.get("sec-websocket-protocol")

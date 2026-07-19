@@ -47,6 +47,10 @@ RUN groupadd -r -g 10001 appgroup && \
 
 # Copy requirements and install dependencies
 COPY rag-backend/requirements.txt .
+# Par défaut, installe PyTorch version CPU pour le développement.
+# Pour le support GPU NVIDIA en production, surcharger au build : --build-arg PYTORCH_INDEX_URL=https://pypi.org/simple
+ARG PYTORCH_INDEX_URL=https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir torch torchvision --index-url ${PYTORCH_INDEX_URL}
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.queue import query_kb_queue
 from app.config.database import get_db
+from app.config.ollama import get_ollama_client
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.services.collections import get_collection_without_relations
@@ -47,6 +48,28 @@ def query_rag(
 
         # Définition du modèle à utiliser par le modèle de langage Ollama
         model = query.model or os.getenv("OLLAMA_QUERY_MODEL", "gemma3:4b")
+
+        # Validation du modèle demandé auprès de la liste des modèles installés sur Ollama
+        try:
+            ollama_client = get_ollama_client()
+            models_list = ollama_client.list()
+            installed_models = {m.model for m in models_list.models}
+            if model not in installed_models and f"{model}:latest" not in installed_models:
+                # Tenter aussi d'enlever le tag :latest pour la vérification inverse
+                clean_model = model.split(":")[0] if ":" in model else model
+                if clean_model not in {m.split(":")[0] for m in installed_models}:
+                    raise HTTPException(
+                        status_code=400, 
+                        detail=f"Le modèle '{model}' n'est pas disponible ou installé sur le serveur Ollama."
+                    )
+        except HTTPException:
+            raise
+        except Exception as e:
+            print(f"Erreur de validation du modèle Ollama: {e}")
+            raise HTTPException(
+                status_code=500, 
+                detail="Impossible de contacter le serveur Ollama pour valider le modèle"
+            )
 
         # Définition du nombre de chunks à retourner
         top_k = query.top_k or 5

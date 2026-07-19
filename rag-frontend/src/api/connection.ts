@@ -36,4 +36,12 @@ const apiAutoLogin = async (): Promise<User> => {
   }
 }
 
-export { apiLogin, apiAutoLogin };
+const apiLogout = async (): Promise<void> => {
+  try {
+    await instance.post("/users/logout");
+  } catch (error) {
+    console.error("Error during API logout call:", error);
+  }
+}
+
+export { apiLogin, apiAutoLogin, apiLogout };
