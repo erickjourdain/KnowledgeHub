@@ -97,9 +97,12 @@ function RouteComponent() {
         <InfoOutlinedIcon color='info' sx={{ fontSize: 28 }} />
         <Box>
           <Typography variant='subtitle1' fontWeight='bold' mb={0.5}>Comment ça fonctionne ?</Typography>
-          <Typography variant='body2' color='text.secondary'>
-            Sélectionnez des fichiers PDF ou Word à insérer dans la base de connaissance en les glissant-déposant ci-dessous, ou en cliquant sur l'icône "Upload".
-            Une fois les fichiers sélectionnées, cliquer sur le bouton "INSÉRER" pour lancer le traitement. Les documents sont envoyés pour traitement, ce qui peut prendre quelques minutes selon le nombre de pages et le nombre de documents.
+          <Typography variant='body2' color='text.secondary' sx={{ lineHeight: 1.6 }}>
+            Sélectionnez des fichiers PDF ou Word à insérer dans la base de connaissances en les glissant-déposant ci-dessous, ou en cliquant sur l'icône "Upload".
+            Une fois les fichiers sélectionnés, cliquez sur le bouton "INSÉRER" pour lancer le traitement. Les documents sont envoyés pour traitement, ce qui peut prendre quelques minutes selon le nombre de pages et le nombre de documents.
+          </Typography>
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 1, fontWeight: 500, lineHeight: 1.6 }}>
+            💡 <b>Note :</b> Les documents Word (.docx) sont automatiquement convertis au format PDF avant leur intégration dans la base de connaissances. Cela garantit un affichage direct optimal dans le navigateur et un accès ciblé à la page exacte de chaque extrait de source.
           </Typography>
         </Box>
       </Paper>

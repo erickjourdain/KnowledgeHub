@@ -35,6 +35,7 @@ class DocumentsResponseNbChunks(DocumentResponse):
 
 class ChunkResponse(BaseModel):
     id: int
+    document_id: int
     chunk_text: str
     dimension: Optional[int] = None
     embedding: Optional[List[float]] = None

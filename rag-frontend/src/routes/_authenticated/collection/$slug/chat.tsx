@@ -372,7 +372,7 @@ function RouteComponent() {
           composerToolbar: MemoizedComposerToolbar
         }}
         partRenderers={{
-          'source-document': ({ part }) => <SourceDocumentCard part={part as any} />,
+          'source-document': ({ part }) => <SourceDocumentCard part={part as any} collectionIdOrSlug={id} />,
           'data-search-progress': ({ part }: { part: any }) => (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
               <CircularProgress size={16} sx={{ color: 'primary.light' }} />

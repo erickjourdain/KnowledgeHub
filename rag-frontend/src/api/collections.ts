@@ -201,6 +201,7 @@ export const deleteCollectionManager = async (
 
 export interface ChunkDetail {
   id: number;
+  document_id: number;
   chunk_text: string;
   dimension?: number | null;
   embedding?: number[] | null;
@@ -216,6 +217,20 @@ export interface ChunkDetail {
 export const fetchChunk = async (chunkId: string | number): Promise<ChunkDetail> => {
   const response = await instance.get(`/collections/chunks/${chunkId}`);
   return response.data as ChunkDetail;
+};
+
+/**
+ * Download a document file from a collection
+ */
+export const downloadDocumentFile = async (
+  collectionIdOrSlug: string | number,
+  documentId: string | number
+): Promise<Blob> => {
+  const response = await instance.get(
+    `/collections/${collectionIdOrSlug}/documents/${documentId}/download`,
+    { responseType: 'blob' }
+  );
+  return response.data as Blob;
 };
 
 

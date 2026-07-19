@@ -35,11 +35,48 @@ def delete_temp_file(file_path: Path) -> None:
         file_path.unlink()
 
 
+def convert_docx_to_pdf(docx_path: Path, output_dir: Path) -> Path:
+    """Convertit un fichier DOCX en PDF en utilisant LibreOffice (soffice) en mode headless"""
+    import subprocess
+    import shutil
+    
+    soffice_path = shutil.which("soffice") or shutil.which("libreoffice")
+    if not soffice_path:
+        # Essayer des chemins par défaut courants si non trouvé dans le PATH
+        for path in ["/usr/bin/soffice", "/usr/bin/libreoffice", "/Applications/LibreOffice.app/Contents/MacOS/soffice"]:
+            if os.path.exists(path):
+                soffice_path = path
+                break
+                
+    if not soffice_path:
+        raise RuntimeError("LibreOffice (soffice) est introuvable. Impossible de convertir le document Word en PDF.")
+
+    cmd = [
+        soffice_path,
+        "--headless",
+        "--convert-to", "pdf",
+        "--outdir", str(output_dir),
+        str(docx_path)
+    ]
+    
+    print(f"Exécution de la conversion LibreOffice: {' '.join(cmd)}")
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"Erreur lors de la conversion Word vers PDF par LibreOffice: {result.stderr or result.stdout}")
+        
+    pdf_filename = docx_path.stem + ".pdf"
+    pdf_path = output_dir / pdf_filename
+    if not pdf_path.exists():
+        raise RuntimeError(f"Le fichier PDF converti est introuvable après la conversion LibreOffice: {pdf_path}")
+        
+    return pdf_path
+
+
 def convert_document(file_path: Path):
-    """Convertit un fichier PDF ou DOCX en document DoclingDocument structurel"""
-    from docling.document_converter import DocumentConverter, PdfFormatOption, WordFormatOption
+    """Convertit un fichier PDF en document DoclingDocument structurel (Docx déjà converti au préalable)"""
+    from docling.document_converter import DocumentConverter, PdfFormatOption
     from docling.datamodel.base_models import InputFormat
-    from docling.datamodel.pipeline_options import PaginatedPipelineOptions, PdfPipelineOptions, TableFormerMode, TableStructureOptions, EasyOcrOptions
+    from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode, TableStructureOptions, EasyOcrOptions
     from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
 
     # Configuration des options de conversion PDF
@@ -56,20 +93,11 @@ def convert_document(file_path: Path):
         num_threads=4, device=AcceleratorDevice.AUTO
     )
 
-    # Configuration des options de conversion DOCX
-    docx_pipepline_options = PaginatedPipelineOptions()
-    docx_pipepline_options.images_scale = 2.0
-    docx_pipepline_options.generate_picture_images = True
-    docx_pipepline_options.accelerator_options = AcceleratorOptions(
-        num_threads=4, device=AcceleratorDevice.AUTO
-    )
-
     # Conversion du document
     converter = DocumentConverter(
-        allowed_formats=[InputFormat.PDF, InputFormat.DOCX],
+        allowed_formats=[InputFormat.PDF],
         format_options={
-            InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
-            InputFormat.DOCX: WordFormatOption(pipeline_options=docx_pipepline_options)
+            InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options)
         }
     )
     result = converter.convert(str(file_path))
@@ -210,6 +238,22 @@ def process_document(
 
         temp_file_path = temp_dir / file_name
 
+        # Conversion préalable des fichiers Word .docx en PDF
+        if file_name.lower().endswith(".docx"):
+            print(f"Fichier Word détecté: {file_name}. Conversion en PDF avec LibreOffice...")
+            try:
+                pdf_path = convert_docx_to_pdf(temp_file_path, temp_dir)
+                # Supprimer l'original .docx du dossier temporaire
+                delete_temp_file(temp_file_path)
+                
+                # Mettre à jour les variables avec le nouveau fichier PDF
+                file_name = pdf_path.name
+                temp_file_path = pdf_path
+                print(f"Conversion réussie. Nouveau fichier à traiter: {file_name}")
+            except Exception as conv_err:
+                print(f"Erreur lors de la conversion de {file_name} : {conv_err}")
+                raise conv_err
+
         # Démarrage du traitement de conversion du document
         print(f"Début du traitement du document {file_name} (ID collection: {collection.id})")
         doc_structure = convert_document(temp_file_path)
@@ -278,6 +322,18 @@ def process_document(
                 document = db.query(Document).filter(Document.id == document_id).first()
                 if not document:
                     raise ValueError(f"Document {document_id} non trouvé")
+                
+                # Si le titre a changé (par exemple de .docx à .pdf), supprimer l'ancien fichier physique
+                if document.title != file_name:
+                    old_file_path = final_dir / str(document.title)
+                    if old_file_path.exists():
+                        try:
+                            old_file_path.unlink()
+                            print(f"Ancien fichier physique supprimé : {old_file_path}")
+                        except Exception as e:
+                            print(f"Erreur lors de la suppression de l'ancien fichier {old_file_path}: {e}")
+                    document.title = file_name
+
                 # Supprimer les chunks existants
                 db.query(DocumentChunk).filter(DocumentChunk.document_id == document_id).delete()
                 document.is_indexed = True

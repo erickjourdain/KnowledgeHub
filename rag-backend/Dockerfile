@@ -38,6 +38,7 @@ RUN apt-get update && apt-get install -y \
     libxcb-render-util0 \
     libxcb-shape0 \
     libglib2.0-0 \
+    libreoffice \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-privileged user and group

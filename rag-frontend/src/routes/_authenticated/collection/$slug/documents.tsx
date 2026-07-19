@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from 'react';
 import { createFileRoute, useNavigate, useLoaderData } from '@tanstack/react-router'
-import { Box, Divider, Typography, Paper, InputBase, IconButton, Button, Stack } from '@mui/material';
+import { Box, Divider, Typography, Paper, InputBase, IconButton, Button, Stack, CircularProgress } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { fetchCollectionDocument } from '@api/collections';
+import { fetchCollectionDocument, downloadDocumentFile } from '@api/collections';
+import type { Document } from '@appTypes/Document';
 import { 
   DataGrid, 
   type GridColDef, 
@@ -55,6 +56,29 @@ function RouteComponent() {
   
   const [searchInput, setSearchInput] = useState(search || '');
   const [selectionMap, setSelectionMap] = useAtom(documentSelectionAtom);
+  const [openingDocId, setOpeningDocId] = useState<number | null>(null);
+
+  const handleViewDocument = async (filename: string, docId: number) => {
+    try {
+      setOpeningDocId(docId);
+      const blob = await downloadDocumentFile(id, docId);
+      const getMediaType = (name: string) => {
+        const ext = name.split('.').pop()?.toLowerCase();
+        if (ext === 'pdf') return 'application/pdf';
+        if (ext === 'txt') return 'text/plain';
+        if (ext === 'png') return 'image/png';
+        if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+        return 'application/octet-stream';
+      };
+      const typedBlob = new Blob([blob], { type: getMediaType(filename) });
+      const url = URL.createObjectURL(typedBlob);
+      window.open(url, '_blank');
+    } catch (err) {
+      console.error("Erreur lors de l'ouverture du document", err);
+    } finally {
+      setOpeningDocId(null);
+    }
+  };
 
   const currentSelection = useMemo(() => {
     return selectionMap[id] || { mode: 'all_except', ids: [] };
@@ -150,7 +174,38 @@ function RouteComponent() {
   }, [currentSelection, count]);
 
   const columns: GridColDef[] = [
-    { field: 'title', headerName: 'Fichier', flex: 0.5 },
+    { 
+      field: 'title', 
+      headerName: 'Fichier', 
+      flex: 0.5,
+      renderCell: (params) => {
+        const doc = params.row as Document;
+        const isOpening = openingDocId === doc.id;
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', height: '100%', gap: 1 }}>
+            <Typography
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isOpening) handleViewDocument(doc.title, doc.id);
+              }}
+              variant="body2"
+              sx={{
+                color: isOpening ? 'text.secondary' : 'primary.light',
+                cursor: isOpening ? 'default' : 'pointer',
+                textDecoration: isOpening ? 'none' : 'underline',
+                fontWeight: 500,
+                '&:hover': {
+                  color: isOpening ? 'text.secondary' : 'primary.main',
+                }
+              }}
+            >
+              {doc.title}
+            </Typography>
+            {isOpening && <CircularProgress size={14} sx={{ color: 'primary.light' }} />}
+          </Box>
+        );
+      }
+    },
     { 
       field: 'created_at', 
       headerName: 'Date d\'insertion', 

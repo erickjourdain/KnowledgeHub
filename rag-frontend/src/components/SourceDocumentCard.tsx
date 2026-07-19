@@ -29,7 +29,7 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import TagIcon from '@mui/icons-material/Tag';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { fetchChunk, type ChunkDetail } from '@api/collections';
+import { fetchChunk, downloadDocumentFile, type ChunkDetail } from '@api/collections';
 
 interface SourceDocumentPart {
   type: 'source-document';
@@ -40,6 +40,7 @@ interface SourceDocumentPart {
 
 interface SourceDocumentCardProps {
   part: SourceDocumentPart;
+  collectionIdOrSlug?: string;
 }
 
 const getFileIcon = (filename: string) => {
@@ -58,14 +59,45 @@ const preprocessMarkdown = (text: string): string => {
   return text.replace(/\|\s*\r?\n\s*\r?\n\s*\|/g, '|\n|');
 };
 
-export default function SourceDocumentCard({ part }: SourceDocumentCardProps) {
+export default function SourceDocumentCard({ part, collectionIdOrSlug }: SourceDocumentCardProps) {
   const [open, setOpen] = useState(false);
   const [chunkDetail, setChunkDetail] = useState<ChunkDetail | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [openingDoc, setOpeningDoc] = useState(false);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => setOpen(false);
+
+  const handleViewDocument = async () => {
+    if (!chunkDetail?.document_id || !collectionIdOrSlug) return;
+    try {
+      setOpeningDoc(true);
+      const blob = await downloadDocumentFile(collectionIdOrSlug, chunkDetail.document_id);
+      const getMediaType = (name: string) => {
+        const ext = name.split('.').pop()?.toLowerCase();
+        if (ext === 'pdf') return 'application/pdf';
+        if (ext === 'txt') return 'text/plain';
+        if (ext === 'png') return 'image/png';
+        if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+        return 'application/octet-stream';
+      };
+      const mediaType = getMediaType(part.title);
+      const typedBlob = new Blob([blob], { type: mediaType });
+      const url = URL.createObjectURL(typedBlob);
+      
+      let finalUrl = url;
+      if (mediaType === 'application/pdf' && chunkDetail.page !== null && chunkDetail.page !== undefined) {
+        finalUrl = `${url}#page=${chunkDetail.page}`;
+      }
+      
+      window.open(finalUrl, '_blank');
+    } catch (err) {
+      console.error("Erreur lors de l'ouverture du document", err);
+    } finally {
+      setOpeningDoc(false);
+    }
+  };
 
   useEffect(() => {
     if (open && part.sourceId) {
@@ -215,9 +247,31 @@ export default function SourceDocumentCard({ part }: SourceDocumentCardProps) {
                   {getFileIcon(part.title)}
                 </Box>
                 <Box sx={{ minWidth: 0 }}>
-                  <Typography variant="body2" fontWeight="600" color="text.primary" sx={{ wordBreak: 'break-all' }}>
-                    {part.title}
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {chunkDetail?.document_id && collectionIdOrSlug ? (
+                      <Typography 
+                        variant="body2" 
+                        fontWeight="600" 
+                        color="primary.light" 
+                        onClick={handleViewDocument}
+                        sx={{ 
+                          wordBreak: 'break-all',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                          '&:hover': {
+                            color: 'primary.main'
+                          }
+                        }}
+                      >
+                        {part.title}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" fontWeight="600" color="text.primary" sx={{ wordBreak: 'break-all' }}>
+                        {part.title}
+                      </Typography>
+                    )}
+                    {openingDoc && <CircularProgress size={14} sx={{ color: 'primary.light' }} />}
+                  </Box>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
                     Document de la base de connaissances
                   </Typography>
