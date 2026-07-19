@@ -32,14 +32,14 @@ import { jobIngestionIdsAtom } from '@store/jobIngestionStore';
 import JobReindexItemStatus from '@components/JobReindexItemStatus';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/reindex',
+  '/_authenticated/_authAdmin/admin/collection/$slug/reindex',
 )({
   component: RouteComponent,
 });
 
 function RouteComponent() {
   const collection = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id'
+    from: '/_authenticated/_authAdmin/admin/collection/$slug'
   });
 
   const [jobIds, setJobIds] = useAtom(jobReindexIdsAtom);

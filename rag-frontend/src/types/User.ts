@@ -15,6 +15,7 @@ export interface User {
   role: UserRole;
   is_active: boolean;
   icon?: string;
+  slug: string;
 }
 
 export interface TokenResponse {

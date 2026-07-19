@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useLoaderData } from '@tanstack/react-router'
 import { Box, Divider, Typography, Paper, InputBase, IconButton, Button, Stack } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ManageSearchIcon from '@mui/icons-material/ManageSearch';
@@ -24,7 +24,7 @@ type RouteSearch = {
 }
 
 export const Route = createFileRoute(
-  '/_authenticated/collection/$id/documents',
+  '/_authenticated/collection/$slug/documents',
 )({
   validateSearch: (search: Record<string, unknown>): RouteSearch => {
     return {
@@ -36,8 +36,8 @@ export const Route = createFileRoute(
   loaderDeps: ({ search: { page, pageSize, search }}) => ({ page, pageSize, search }),
   loader: async ({ params, deps: { page, pageSize, search }, context:{ queryClient } }) => {
     return await queryClient.ensureQueryData({
-      queryKey: ['collections', params.id, 'documents', page, pageSize, search ],
-      queryFn: () => fetchCollectionDocument(params.id, page, pageSize, search || null)
+      queryKey: ['collections', params.slug, 'documents', page, pageSize, search ],
+      queryFn: () => fetchCollectionDocument(params.slug, page, pageSize, search || null)
     })
   },
   component: RouteComponent,
@@ -47,7 +47,9 @@ const PAGE_SIZE_OPTIONS = [10, 25, 50];
 
 function RouteComponent() {
   const navigate = useNavigate({ from: Route.fullPath });
-  const { id } = Route.useParams();
+  const { slug: _slug } = Route.useParams();
+  const parentCollection = useLoaderData({ from: '/_authenticated/collection/$slug' });
+  const id = String(parentCollection.id);
   const { page, pageSize, search } = Route.useSearch();
   const { data, count } = Route.useLoaderData();
   

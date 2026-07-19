@@ -18,6 +18,7 @@ from app.schemas import (
 from app.services.users import change_user_password, check_user_password
 from app.utils.security import hash_password, verify_password, create_access_token, create_refresh_token
 from app.dependencies import get_current_user
+from app.utils.slug import slugify
 
 router = APIRouter()
 
@@ -91,6 +92,7 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     new_user = User(
         username=user.username,
         email=user.email,
+        slug=slugify(user.username),
         hashed_password=hash_password(user.password),
         is_active=False,
         role=RoleEnum.USER,
@@ -185,37 +187,47 @@ def change_password(
         raise HTTPException(status_code=400, detail="Impossible de changer le mot de passe: ")
 
 
-@router.get("/{user_id}", response_model=UserResponse)
+def get_user_by_id_or_slug(user_id_or_slug: str, db: Session) -> User | None:
+    try:
+        user_id = int(user_id_or_slug)
+        return db.query(User).filter(User.id == user_id).first()
+    except ValueError:
+        return db.query(User).filter(User.slug == user_id_or_slug).first()
+
+
+@router.get("/{user_id_or_slug}", response_model=UserResponse)
 def get_user(
-    user_id: int, 
+    user_id_or_slug: str, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Récupérer un utilisateur par ID"""
-    # Un utilisateur peut voir son propre profil, ADMIN peut voir tout le monde
-    if current_user.id != user_id and current_user.role != RoleEnum.ADMIN:
-        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
-    
-    user = db.query(User).filter(User.id == user_id).first()
+    """Récupérer un utilisateur par ID ou Slug"""
+    user = get_user_by_id_or_slug(user_id_or_slug, db)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+    # Un utilisateur peut voir son propre profil, ADMIN peut voir tout le monde
+    if current_user.id != user.id and current_user.role != RoleEnum.ADMIN:
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
+    
     return user
 
-@router.put("/{user_id}", response_model=UserResponse)
+
+@router.put("/{user_id_or_slug}", response_model=UserResponse)
 def update_user(
-    user_id: int, 
+    user_id_or_slug: str, 
     user_update: UserUpdate, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Mettre à jour un utilisateur"""
-    # Vérifier les permissions
-    if current_user.id != user_id and current_user.role != RoleEnum.ADMIN:
-        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
-    
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id_or_slug(user_id_or_slug, db)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
+        
+    # Vérifier les permissions
+    if current_user.id != user.id and current_user.role != RoleEnum.ADMIN:
+        raise HTTPException(status_code=403, detail="Permissions insuffisantes")
     
     # ADMIN peut modifier le rôle et is_active, sinon non
     update_data = user_update.model_dump(exclude_unset=True)
@@ -226,15 +238,17 @@ def update_user(
     
     for key, value in update_data.items():
         setattr(user, key, value)
+        if key == "username":
+            setattr(user, "slug", slugify(value))
     
     db.commit()
     db.refresh(user)
     return user
     
 
-@router.delete("/{user_id}", response_model=BackendResponse)
+@router.delete("/{user_id_or_slug}", response_model=BackendResponse)
 def delete_user(
-    user_id: int, 
+    user_id_or_slug: str, 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -242,7 +256,7 @@ def delete_user(
     if current_user.role != RoleEnum.ADMIN:
         raise HTTPException(status_code=403, detail="Permissions insuffisantes")
     
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id_or_slug(user_id_or_slug, db)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     
@@ -253,17 +267,18 @@ def delete_user(
         message="Utilisateur supprimé"
     )
 
-@router.post("/activate/{user_id}", response_model=BackendResponse)
+
+@router.post("/activate/{user_id_or_slug}", response_model=BackendResponse)
 def activate_user(
-    user_id: int,
+    user_id_or_slug: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Activer un utilisateur (ADMIN ou GESTIONNAIRE uniquement)"""
+    """Activer un utilisateur (ADMIN uniquement)"""
     if current_user.role != RoleEnum.ADMIN:
         raise HTTPException(status_code=403, detail="Permissions insuffisantes")
     
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id_or_slug(user_id_or_slug, db)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     
@@ -275,9 +290,10 @@ def activate_user(
         message=f"Utilisateur {user.id} activé" 
     )
 
-@router.post("/deactivate/{user_id}")
+
+@router.post("/deactivate/{user_id_or_slug}")
 def deactivate_user(
-    user_id: int,
+    user_id_or_slug: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -285,7 +301,7 @@ def deactivate_user(
     if current_user.role != RoleEnum.ADMIN:
         raise HTTPException(status_code=403, detail="Permissions insuffisantes")
     
-    user = db.query(User).filter(User.id == user_id).first()
+    user = get_user_by_id_or_slug(user_id_or_slug, db)
     if not user:
         raise HTTPException(status_code=404, detail="Utilisateur non trouvé")
     

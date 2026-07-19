@@ -12,14 +12,14 @@ import { jobIngestionIdsAtom } from '@store/jobIngestionStore';
 import { jobReindexIdsAtom } from '@store/jobReindexStore';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/delete',
+  '/_authenticated/_authAdmin/admin/collection/$slug/delete',
 )({
   component: RouteComponent,
 })
 
 function RouteComponent() {
   const collection = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id'
+    from: '/_authenticated/_authAdmin/admin/collection/$slug'
   });
   const navigate = useNavigate();
   const queryClient = useQueryClient();

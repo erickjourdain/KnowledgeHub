@@ -92,20 +92,20 @@ function Index() {
     });
   }
 
-  const handleChat = (id: number) => {
-    navigate({ to: '/collection/$id/chat', params: { id: String(id) }});
+  const handleChat = (slug: string) => {
+    navigate({ to: '/collection/$slug/chat', params: { slug }});
   }
 
-  const handleDocument = (id: number) => {
+  const handleDocument = (slug: string) => {
     navigate({ 
-      to: '/collection/$id/documents', 
-      params: { id: String(id) },
+      to: '/collection/$slug/documents', 
+      params: { slug },
       search: { page: 1, pageSize: 25 }
     });
   }
 
-  const handleAdmin = (id: number) => {
-    navigate({ to: '/admin/collection/$id', params: { id: String(id) }})
+  const handleAdmin = (slug: string) => {
+    navigate({ to: '/admin/collection/$slug', params: { slug }})
   }
 
   return (
@@ -304,7 +304,7 @@ function Index() {
                             color: '#fff',
                           }
                         }}
-                        onClick={() => handleChat(collection.id)}
+                        onClick={() => handleChat(collection.slug)}
                       >
                         <ChatIcon fontSize='small'/>
                       </IconButton>
@@ -320,7 +320,7 @@ function Index() {
                             color: '#fff',
                           }
                         }}
-                        onClick={() => handleDocument(collection.id)}
+                        onClick={() => handleDocument(collection.slug)}
                       >
                         <ManageSearchIcon fontSize='small'/>
                       </IconButton>
@@ -336,7 +336,7 @@ function Index() {
                             color: '#fff',
                           }
                         }}
-                        onClick={() => handleAdmin(collection.id)}
+                        onClick={() => handleAdmin(collection.slug)}
                       >
                         <SettingsIcon fontSize='small'/>
                       </IconButton>

@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/',
+  '/_authenticated/_authAdmin/admin/collection/$slug/',
 )({
-  beforeLoad: ({ params: { id } }) => {
+  beforeLoad: ({ params: { slug } }) => {
     throw redirect({
-      to: '/admin/collection/$id/documents',
-      params: { id },
+      to: '/admin/collection/$slug/documents',
+      params: { slug },
       search: { page: 1, pageSize: 25 }
     });
   },

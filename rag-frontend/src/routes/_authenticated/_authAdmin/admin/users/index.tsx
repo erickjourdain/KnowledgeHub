@@ -90,10 +90,10 @@ function RouteComponent() {
     }
   }
 
-  const handleShowUser = (userId: number) => {
+  const handleShowUser = (slug: string) => {
     navigate({
-      to: '/admin/users/$id',
-      params: { id: String(userId) }
+      to: '/admin/users/$slug',
+      params: { slug }
     })
   }
 
@@ -106,7 +106,7 @@ function RouteComponent() {
         <IconButton 
           id={`show-user-${params.row.id}`}
           key={params.row.id}
-          onClick={() => handleShowUser(params.row.id)}
+          onClick={() => handleShowUser(params.row.slug)}
         >
           <VisibilityIcon color='primary' />
         </IconButton>

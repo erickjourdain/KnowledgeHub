@@ -37,7 +37,7 @@ type RouteSearch = {
 }
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/documents',
+  '/_authenticated/_authAdmin/admin/collection/$slug/documents',
 )({
   validateSearch: (search: RouteSearch) => {
     return {
@@ -48,8 +48,8 @@ export const Route = createFileRoute(
   loaderDeps: ({ search: { page, pageSize } }) => ({ page, pageSize }),
   loader: async ({ params, deps: { page, pageSize }, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
-      queryKey: ['collections', params.id, 'documents', page, pageSize],
-      queryFn: () => fetchCollectionDocument(params.id, page, pageSize)
+      queryKey: ['collections', params.slug, 'documents', page, pageSize],
+      queryFn: () => fetchCollectionDocument(params.slug, page, pageSize)
     });
   },
   component: RouteComponent,
@@ -62,12 +62,11 @@ function RouteComponent() {
   const queryClient = useQueryClient();
   const navigate = useNavigate({ from: Route.fullPath });
   const collection = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id'
+    from: '/_authenticated/_authAdmin/admin/collection/$slug'
   });
   const { data, count } = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id/documents'
-  }
-  );
+    from: '/_authenticated/_authAdmin/admin/collection/$slug/documents'
+  });
   const [paginationModel, setPaginationModel] = useState({
     page: 1,
     pageSize: 25

@@ -42,7 +42,7 @@ type RouteSearch = {
 }
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/managers',
+  '/_authenticated/_authAdmin/admin/collection/$slug/managers',
 )({
   validateSearch: (search: RouteSearch) => {
     return {
@@ -57,9 +57,9 @@ export const Route = createFileRoute(
       queryFn: () => fetchUsers(page, pageSize, true, null, ['GESTIONNAIRE', 'ADMIN'])
     });
     const authorization = await queryClient.ensureQueryData({
-      queryKey: ['authorizedManagers', params.id, users.data.map(u => u.id).join(',')],
+      queryKey: ['authorizedManagers', params.slug, users.data.map(u => u.id).join(',')],
       queryFn: () => fetchCollectionManagersStatut(
-        params.id,
+        params.slug,
         users.data.map(u => u.id)
       )
     });
@@ -83,10 +83,12 @@ function RouteComponent() {
   const router = useRouter();
   const navigate = useNavigate({ from: Route.fullPath });
   const queryClient = useQueryClient();
-  const { id } =
-    useParams({ from: '/_authenticated/_authAdmin/admin/collection/$id' });
+  const { slug: _slug } =
+    useParams({ from: '/_authenticated/_authAdmin/admin/collection/$slug' });
+  const parentCollection = useLoaderData({ from: '/_authenticated/_authAdmin/admin/collection/$slug' });
+  const id = String(parentCollection.id);
   const { data, count } =
-    useLoaderData({ from: '/_authenticated/_authAdmin/admin/collection/$id/managers' });
+    useLoaderData({ from: '/_authenticated/_authAdmin/admin/collection/$slug/managers' });
   const [paginationModel, setPaginationModel] = useState({
     page: 1,
     pageSize: 25

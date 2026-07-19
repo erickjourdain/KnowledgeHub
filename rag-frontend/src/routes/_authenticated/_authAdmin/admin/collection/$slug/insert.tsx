@@ -20,12 +20,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { IngestionJob } from '@appTypes/Job';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/insert',
+  '/_authenticated/_authAdmin/admin/collection/$slug/insert',
 )({
-  loader: async ({ params: { id }, context: { queryClient } }) => {
+  loader: async ({ params: { slug }, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
-      queryKey: ['finishedIngestionJobs', id],
-      queryFn: () => fetchFinishedIngestionJobCollection(id)
+      queryKey: ['finishedIngestionJobs', slug],
+      queryFn: () => fetchFinishedIngestionJobCollection(slug)
     }) as IngestionJob[];
   },
   component: RouteComponent,
@@ -35,7 +35,7 @@ function RouteComponent() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const collection = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id'
+    from: '/_authenticated/_authAdmin/admin/collection/$slug'
   });
   const setJobIds = useSetAtom(jobIngestionIdsAtom);
   const updateJob = useSetAtom(updateJobIngestionAtom);

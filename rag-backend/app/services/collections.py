@@ -9,6 +9,7 @@ from sqlalchemy.orm import lazyload, raiseload, Session
 from app.schemas import CollectionCreate, CollectionListResponse, CollectionResponse, CollectionUpdate
 from app.models import Collection, Document, DocumentChunk, RoleEnum, User, collection_users, collection_managers, JobIngestion, JobQueryKb, Conversation, Message
 from app.utils.directory import get_knowledge_base_dir
+from app.utils.slug import slugify
 
 
 def check_is_gestionnaire(collection_id: int, user: User, db: Session) -> bool:
@@ -22,44 +23,54 @@ def check_is_gestionnaire(collection_id: int, user: User, db: Session) -> bool:
 
 
 def get_collection_without_relations(
-    collection_id: int,
+    collection_id_or_slug: int | str,
     user: User,
     db: Session,
 ) -> CollectionListResponse | None:
     """Récupère une collection sans ses relations"""
 
     try:
+        is_id = False
+        if isinstance(collection_id_or_slug, int):
+            is_id = True
+        elif isinstance(collection_id_or_slug, str):
+            if collection_id_or_slug.isdigit():
+                is_id = True
+                collection_id_or_slug = int(collection_id_or_slug)
+
+        filter_expr = Collection.id == collection_id_or_slug if is_id else Collection.slug == collection_id_or_slug
+
         # On utilise raiseload pour ne pas charger les relations de la collection
         # En fonction du rôle de l'utilisateur, on récupère les collections auxquelles il a accès
         # Les administrateurs ont accès à toutes les collections
         if user.role == RoleEnum.ADMIN:
             collection = db.query(Collection).options(raiseload("*")) \
-                .filter(Collection.id == collection_id).first()
+                .filter(filter_expr).first()
         # Les gestionnaires ont accès aux collections qu'ils ont créées, dont ils sont gestionnaires, ou auxquelles ils sont associés
         elif user.role == RoleEnum.GESTIONNAIRE:
             collection = db.query(Collection).options(raiseload("*")) \
-                .filter(Collection.id == collection_id, (Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)).first()    
+                .filter(filter_expr, (Collection.creator_id == user.id) | Collection.managers.any(id=user.id) | Collection.authorized_users.any(id=user.id)).first()    
         # Les utilisateurs ont accès aux collections auxquelles ils sont associés
         else:
             collection = db.query(Collection).options(raiseload("*")) \
-                .filter(Collection.authorized_users.any(id=user.id), Collection.id == collection_id).first()
+                .filter(Collection.authorized_users.any(id=user.id), filter_expr).first()
             
         # Si la collection n'existe pas, on retourne None
         if not collection:
             return None
         
-        # Vérification des droits d'accès à la collection
+        resolved_id = collection.id
         
         # On compte le nombre de documents associés à la collection
         nb_documents = db.query(func.count(Document.id)) \
-            .filter(Document.collection_id == collection_id, Document.is_indexed).scalar()
+            .filter(Document.collection_id == resolved_id, Document.is_indexed).scalar()
         # On compte le nombre d'utilisateurs associés à la collection
         nb_users = db.query(func.count(collection_users.c.user_id)) \
-            .filter(collection_users.c.collection_id == collection_id).scalar()
+            .filter(collection_users.c.collection_id == resolved_id).scalar()
 
         # On récupère les IDs des gestionnaires associés à la collection
         manager_ids = [r[0] for r in db.query(collection_managers.c.user_id) \
-            .filter(collection_managers.c.collection_id == collection_id).all()]
+            .filter(collection_managers.c.collection_id == resolved_id).all()]
 
         response = CollectionListResponse.model_validate(collection)
 
@@ -195,7 +206,8 @@ def create_collection(collection: CollectionCreate, user: User, db: Session) -> 
 
     try:
         new_collection = Collection(
-            name=collection.name,
+            name=collection.name.upper(),
+            slug=slugify(collection.name),
             description=collection.description,
             modele=collection.modele,
             creator_id=user.id
@@ -219,7 +231,10 @@ def update_collection(collection_id: int, collection_update: CollectionUpdate, d
         stmt = update(Collection).where(Collection.id == collection_id)
 
         if collection_update.name is not None:
-            stmt = stmt.values(name=collection_update.name)
+            stmt = stmt.values(
+                name=collection_update.name.upper(),
+                slug=slugify(collection_update.name)
+            )
         if collection_update.description is not None:
             stmt = stmt.values(description=collection_update.description)
         

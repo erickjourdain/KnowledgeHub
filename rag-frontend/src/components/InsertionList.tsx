@@ -11,7 +11,7 @@ import type { IngestionJob } from "@appTypes/Job";
 
 function InsertionList() {
   const finishedIngestionJobs = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id/insert'
+    from: '/_authenticated/_authAdmin/admin/collection/$slug/insert'
   }) as IngestionJob[];
   const jobIds = useAtomValue(jobIngestionIdsAtom)
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useAtom } from "jotai";
 import { useQueryClient } from "@tanstack/react-query";
-import { useParams } from '@tanstack/react-router';
+import { useParams, useLoaderData } from '@tanstack/react-router';
 import { useChat } from "@mui/x-chat/headless";
 import { IconButton, Input, InputAdornment } from "@mui/material";
 import DoneIcon from '@mui/icons-material/Done';
@@ -15,9 +15,13 @@ const ConversationHeaderTitle = React.forwardRef<HTMLDivElement, CustomTitleProp
   props,
   ref,
 ) {
-  const { id } = useParams({
-    from: '/_authenticated/collection/$id/chat'
+  const { slug: _slug } = useParams({
+    from: '/_authenticated/collection/$slug/chat'
   });
+  const collection = useLoaderData({
+    from: '/_authenticated/collection/$slug'
+  });
+  const id = String(collection.id);
   const queryClient = useQueryClient();
   const { conversations, activeConversationId } = useChat();
   const [conversationState, setConversationState] = 

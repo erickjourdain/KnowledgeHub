@@ -24,7 +24,7 @@ import { AppError } from '@utils/errors';
 import ErrorPage from '@components/ErrorPage';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/users/$id',
+  '/_authenticated/_authAdmin/admin/users/$slug',
 )({
   beforeLoad: ({ context: { auth } }) => {
     if (!isAdmin(auth.user)) {
@@ -32,10 +32,10 @@ export const Route = createFileRoute(
     }
   },
   errorComponent: ({ error, reset }) => <ErrorPage error={error} reset={reset} />,
-  loader: async ({ params: { id }, context: { queryClient } }) => {
+  loader: async ({ params: { slug }, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
-      queryKey: ['users', { id }],
-      queryFn: () => fetchUser(Number(id))
+      queryKey: ['users', { slug }],
+      queryFn: () => fetchUser(slug)
     });
   },
   component: RouteComponent,
@@ -52,7 +52,8 @@ function RouteComponent() {
   const router = useRouter();
   const user = Route.useLoaderData();
   const queryClient = useQueryClient();
-  const { id } = Route.useParams();
+  const { slug } = Route.useParams();
+  const id = String(user.id);
   const [updating, setUpdating] = useState<boolean>(false);
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
   const [updateStatus, setUpdateStatus] = useState<"success" | "error" | null>(null);
@@ -90,7 +91,7 @@ function RouteComponent() {
         setMessage("L'utilisateur a été mis à jour avec succès.");
         setShowConfirmation(true);
         queryClient.resetQueries({ queryKey: ['users'] });
-        queryClient.invalidateQueries({ queryKey: ['users', { id }] });
+        queryClient.invalidateQueries({ queryKey: ['users', { slug }] });
         router.invalidate();
       })
       .catch((error) => {

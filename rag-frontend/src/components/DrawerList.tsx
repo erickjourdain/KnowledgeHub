@@ -89,23 +89,23 @@ export function DrawerList({ isCollapsed, onToggleCollapse }: DrawerListProps) {
 
   const handleChat = () => {
     navigate({ 
-      to: '/collection/$id/chat', 
-      params: { id: String(collection?.id) }
+      to: '/collection/$slug/chat', 
+      params: { slug: String(collection?.slug) }
     });
   }
 
   const handleDocument = () => {
     navigate({ 
-      to: '/collection/$id/documents', 
-      params: { id: String(collection?.id) },
+      to: '/collection/$slug/documents', 
+      params: { slug: String(collection?.slug) },
       search: { page: 1, pageSize: 25 }
     });
   }
 
   const handleAdmin = () => {
     navigate({ 
-      to: '/admin/collection/$id', 
-      params: { id: String(collection?.id) }
+      to: '/admin/collection/$slug', 
+      params: { slug: String(collection?.slug) }
     });
   }
 

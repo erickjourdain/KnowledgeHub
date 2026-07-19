@@ -28,6 +28,7 @@ class Collection(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     uuid: Mapped[str] = mapped_column(String(36), unique=True, default=lambda: str(uuid.uuid4()), index=True)
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=True)
     modele: Mapped[str] = mapped_column(String(100), nullable=True)
     creator_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)

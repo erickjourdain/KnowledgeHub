@@ -28,7 +28,7 @@ function AdminCollectionComponent() {
     createCollection(data)
       .then(data => {
         console.log("collection créée avec succès", data);
-        queryClient.resetQueries({ 
+        queryClient.resetQueries({
           queryKey: ['collections', 1, null]
         });
         navigate({ to: "/", search: { page: 1, search: null } });
@@ -54,9 +54,6 @@ function AdminCollectionComponent() {
           break;
         case "maxLength":
           message = "Le nom de la collection ne peut contenir plus de 25 cractères";
-          break;
-        case "pattern":
-          message = "Le nom de la colection ne peut contenir de blanc ou caractères spéciaux";
           break;
         default:
           message = "Le nom de la collection n'est pas correct";
@@ -124,8 +121,7 @@ function AdminCollectionComponent() {
               ...register("name", {
                 required: "Le nom de la collection est obligatoire.",
                 minLength: 5,
-                maxLength: 25,
-                pattern: /^[a-zA-Z0-9_-]+$/
+                maxLength: 25
               })
               }
             />

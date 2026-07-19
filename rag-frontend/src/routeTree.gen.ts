@@ -17,21 +17,21 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedAuthAdminRouteImport } from './routes/_authenticated/_authAdmin'
-import { Route as AuthenticatedCollectionIdRouteImport } from './routes/_authenticated/collection/$id'
-import { Route as AuthenticatedCollectionIdDocumentsRouteImport } from './routes/_authenticated/collection/$id/documents'
-import { Route as AuthenticatedCollectionIdChatRouteImport } from './routes/_authenticated/collection/$id/chat'
+import { Route as AuthenticatedCollectionSlugRouteImport } from './routes/_authenticated/collection/$slug'
+import { Route as AuthenticatedCollectionSlugDocumentsRouteImport } from './routes/_authenticated/collection/$slug/documents'
+import { Route as AuthenticatedCollectionSlugChatRouteImport } from './routes/_authenticated/collection/$slug/chat'
 import { Route as AuthenticatedAuthAdminAdminUsersIndexRouteImport } from './routes/_authenticated/_authAdmin/admin/users/index'
-import { Route as AuthenticatedAuthAdminAdminUsersIdRouteImport } from './routes/_authenticated/_authAdmin/admin/users/$id'
+import { Route as AuthenticatedAuthAdminAdminUsersSlugRouteImport } from './routes/_authenticated/_authAdmin/admin/users/$slug'
 import { Route as AuthenticatedAuthAdminAdminCollectionNewRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/new'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdIndexRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/index'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdUsersRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/users'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdUpdateRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/update'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdReindexRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/reindex'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdManagersRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/managers'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdInsertRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/insert'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdDocumentsRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/documents'
-import { Route as AuthenticatedAuthAdminAdminCollectionIdDeleteRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$id/delete'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugIndexRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/index'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugUsersRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/users'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugUpdateRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/update'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugReindexRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/reindex'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugManagersRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/managers'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugInsertRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/insert'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugDocumentsRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/documents'
+import { Route as AuthenticatedAuthAdminAdminCollectionSlugDeleteRouteImport } from './routes/_authenticated/_authAdmin/admin/collection/$slug/delete'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -71,23 +71,23 @@ const AuthenticatedAuthAdminRoute = AuthenticatedAuthAdminRouteImport.update({
   id: '/_authAdmin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedCollectionIdRoute =
-  AuthenticatedCollectionIdRouteImport.update({
-    id: '/collection/$id',
-    path: '/collection/$id',
+const AuthenticatedCollectionSlugRoute =
+  AuthenticatedCollectionSlugRouteImport.update({
+    id: '/collection/$slug',
+    path: '/collection/$slug',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedCollectionIdDocumentsRoute =
-  AuthenticatedCollectionIdDocumentsRouteImport.update({
+const AuthenticatedCollectionSlugDocumentsRoute =
+  AuthenticatedCollectionSlugDocumentsRouteImport.update({
     id: '/documents',
     path: '/documents',
-    getParentRoute: () => AuthenticatedCollectionIdRoute,
+    getParentRoute: () => AuthenticatedCollectionSlugRoute,
   } as any)
-const AuthenticatedCollectionIdChatRoute =
-  AuthenticatedCollectionIdChatRouteImport.update({
+const AuthenticatedCollectionSlugChatRoute =
+  AuthenticatedCollectionSlugChatRouteImport.update({
     id: '/chat',
     path: '/chat',
-    getParentRoute: () => AuthenticatedCollectionIdRoute,
+    getParentRoute: () => AuthenticatedCollectionSlugRoute,
   } as any)
 const AuthenticatedAuthAdminAdminUsersIndexRoute =
   AuthenticatedAuthAdminAdminUsersIndexRouteImport.update({
@@ -95,10 +95,10 @@ const AuthenticatedAuthAdminAdminUsersIndexRoute =
     path: '/admin/users/',
     getParentRoute: () => AuthenticatedAuthAdminRoute,
   } as any)
-const AuthenticatedAuthAdminAdminUsersIdRoute =
-  AuthenticatedAuthAdminAdminUsersIdRouteImport.update({
-    id: '/admin/users/$id',
-    path: '/admin/users/$id',
+const AuthenticatedAuthAdminAdminUsersSlugRoute =
+  AuthenticatedAuthAdminAdminUsersSlugRouteImport.update({
+    id: '/admin/users/$slug',
+    path: '/admin/users/$slug',
     getParentRoute: () => AuthenticatedAuthAdminRoute,
   } as any)
 const AuthenticatedAuthAdminAdminCollectionNewRoute =
@@ -107,59 +107,59 @@ const AuthenticatedAuthAdminAdminCollectionNewRoute =
     path: '/admin/collection/new',
     getParentRoute: () => AuthenticatedAuthAdminRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdRoute =
-  AuthenticatedAuthAdminAdminCollectionIdRouteImport.update({
-    id: '/admin/collection/$id',
-    path: '/admin/collection/$id',
+const AuthenticatedAuthAdminAdminCollectionSlugRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugRouteImport.update({
+    id: '/admin/collection/$slug',
+    path: '/admin/collection/$slug',
     getParentRoute: () => AuthenticatedAuthAdminRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdIndexRoute =
-  AuthenticatedAuthAdminAdminCollectionIdIndexRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugIndexRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdUsersRoute =
-  AuthenticatedAuthAdminAdminCollectionIdUsersRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugUsersRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugUsersRouteImport.update({
     id: '/users',
     path: '/users',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdUpdateRoute =
-  AuthenticatedAuthAdminAdminCollectionIdUpdateRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugUpdateRouteImport.update({
     id: '/update',
     path: '/update',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdReindexRoute =
-  AuthenticatedAuthAdminAdminCollectionIdReindexRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugReindexRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugReindexRouteImport.update({
     id: '/reindex',
     path: '/reindex',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdManagersRoute =
-  AuthenticatedAuthAdminAdminCollectionIdManagersRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugManagersRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugManagersRouteImport.update({
     id: '/managers',
     path: '/managers',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdInsertRoute =
-  AuthenticatedAuthAdminAdminCollectionIdInsertRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugInsertRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugInsertRouteImport.update({
     id: '/insert',
     path: '/insert',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute =
-  AuthenticatedAuthAdminAdminCollectionIdDocumentsRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugDocumentsRouteImport.update({
     id: '/documents',
     path: '/documents',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
-const AuthenticatedAuthAdminAdminCollectionIdDeleteRoute =
-  AuthenticatedAuthAdminAdminCollectionIdDeleteRouteImport.update({
+const AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute =
+  AuthenticatedAuthAdminAdminCollectionSlugDeleteRouteImport.update({
     id: '/delete',
     path: '/delete',
-    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionIdRoute,
+    getParentRoute: () => AuthenticatedAuthAdminAdminCollectionSlugRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -169,21 +169,21 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/profile': typeof AuthenticatedProfileRoute
-  '/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
-  '/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
-  '/collection/$id/documents': typeof AuthenticatedCollectionIdDocumentsRoute
-  '/admin/collection/$id': typeof AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren
+  '/collection/$slug': typeof AuthenticatedCollectionSlugRouteWithChildren
+  '/collection/$slug/chat': typeof AuthenticatedCollectionSlugChatRoute
+  '/collection/$slug/documents': typeof AuthenticatedCollectionSlugDocumentsRoute
+  '/admin/collection/$slug': typeof AuthenticatedAuthAdminAdminCollectionSlugRouteWithChildren
   '/admin/collection/new': typeof AuthenticatedAuthAdminAdminCollectionNewRoute
-  '/admin/users/$id': typeof AuthenticatedAuthAdminAdminUsersIdRoute
+  '/admin/users/$slug': typeof AuthenticatedAuthAdminAdminUsersSlugRoute
   '/admin/users/': typeof AuthenticatedAuthAdminAdminUsersIndexRoute
-  '/admin/collection/$id/delete': typeof AuthenticatedAuthAdminAdminCollectionIdDeleteRoute
-  '/admin/collection/$id/documents': typeof AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute
-  '/admin/collection/$id/insert': typeof AuthenticatedAuthAdminAdminCollectionIdInsertRoute
-  '/admin/collection/$id/managers': typeof AuthenticatedAuthAdminAdminCollectionIdManagersRoute
-  '/admin/collection/$id/reindex': typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
-  '/admin/collection/$id/update': typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
-  '/admin/collection/$id/users': typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
-  '/admin/collection/$id/': typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
+  '/admin/collection/$slug/delete': typeof AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute
+  '/admin/collection/$slug/documents': typeof AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute
+  '/admin/collection/$slug/insert': typeof AuthenticatedAuthAdminAdminCollectionSlugInsertRoute
+  '/admin/collection/$slug/managers': typeof AuthenticatedAuthAdminAdminCollectionSlugManagersRoute
+  '/admin/collection/$slug/reindex': typeof AuthenticatedAuthAdminAdminCollectionSlugReindexRoute
+  '/admin/collection/$slug/update': typeof AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute
+  '/admin/collection/$slug/users': typeof AuthenticatedAuthAdminAdminCollectionSlugUsersRoute
+  '/admin/collection/$slug/': typeof AuthenticatedAuthAdminAdminCollectionSlugIndexRoute
 }
 export interface FileRoutesByTo {
   '/change-password': typeof ChangePasswordRoute
@@ -192,20 +192,20 @@ export interface FileRoutesByTo {
   '/register': typeof RegisterRoute
   '/': typeof AuthenticatedIndexRoute
   '/profile': typeof AuthenticatedProfileRoute
-  '/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
-  '/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
-  '/collection/$id/documents': typeof AuthenticatedCollectionIdDocumentsRoute
+  '/collection/$slug': typeof AuthenticatedCollectionSlugRouteWithChildren
+  '/collection/$slug/chat': typeof AuthenticatedCollectionSlugChatRoute
+  '/collection/$slug/documents': typeof AuthenticatedCollectionSlugDocumentsRoute
   '/admin/collection/new': typeof AuthenticatedAuthAdminAdminCollectionNewRoute
-  '/admin/users/$id': typeof AuthenticatedAuthAdminAdminUsersIdRoute
+  '/admin/users/$slug': typeof AuthenticatedAuthAdminAdminUsersSlugRoute
   '/admin/users': typeof AuthenticatedAuthAdminAdminUsersIndexRoute
-  '/admin/collection/$id/delete': typeof AuthenticatedAuthAdminAdminCollectionIdDeleteRoute
-  '/admin/collection/$id/documents': typeof AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute
-  '/admin/collection/$id/insert': typeof AuthenticatedAuthAdminAdminCollectionIdInsertRoute
-  '/admin/collection/$id/managers': typeof AuthenticatedAuthAdminAdminCollectionIdManagersRoute
-  '/admin/collection/$id/reindex': typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
-  '/admin/collection/$id/update': typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
-  '/admin/collection/$id/users': typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
-  '/admin/collection/$id': typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
+  '/admin/collection/$slug/delete': typeof AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute
+  '/admin/collection/$slug/documents': typeof AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute
+  '/admin/collection/$slug/insert': typeof AuthenticatedAuthAdminAdminCollectionSlugInsertRoute
+  '/admin/collection/$slug/managers': typeof AuthenticatedAuthAdminAdminCollectionSlugManagersRoute
+  '/admin/collection/$slug/reindex': typeof AuthenticatedAuthAdminAdminCollectionSlugReindexRoute
+  '/admin/collection/$slug/update': typeof AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute
+  '/admin/collection/$slug/users': typeof AuthenticatedAuthAdminAdminCollectionSlugUsersRoute
+  '/admin/collection/$slug': typeof AuthenticatedAuthAdminAdminCollectionSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -217,21 +217,21 @@ export interface FileRoutesById {
   '/_authenticated/_authAdmin': typeof AuthenticatedAuthAdminRouteWithChildren
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/collection/$id': typeof AuthenticatedCollectionIdRouteWithChildren
-  '/_authenticated/collection/$id/chat': typeof AuthenticatedCollectionIdChatRoute
-  '/_authenticated/collection/$id/documents': typeof AuthenticatedCollectionIdDocumentsRoute
-  '/_authenticated/_authAdmin/admin/collection/$id': typeof AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren
+  '/_authenticated/collection/$slug': typeof AuthenticatedCollectionSlugRouteWithChildren
+  '/_authenticated/collection/$slug/chat': typeof AuthenticatedCollectionSlugChatRoute
+  '/_authenticated/collection/$slug/documents': typeof AuthenticatedCollectionSlugDocumentsRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug': typeof AuthenticatedAuthAdminAdminCollectionSlugRouteWithChildren
   '/_authenticated/_authAdmin/admin/collection/new': typeof AuthenticatedAuthAdminAdminCollectionNewRoute
-  '/_authenticated/_authAdmin/admin/users/$id': typeof AuthenticatedAuthAdminAdminUsersIdRoute
+  '/_authenticated/_authAdmin/admin/users/$slug': typeof AuthenticatedAuthAdminAdminUsersSlugRoute
   '/_authenticated/_authAdmin/admin/users/': typeof AuthenticatedAuthAdminAdminUsersIndexRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/delete': typeof AuthenticatedAuthAdminAdminCollectionIdDeleteRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/documents': typeof AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/insert': typeof AuthenticatedAuthAdminAdminCollectionIdInsertRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/managers': typeof AuthenticatedAuthAdminAdminCollectionIdManagersRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/reindex': typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/update': typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/users': typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
-  '/_authenticated/_authAdmin/admin/collection/$id/': typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/delete': typeof AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/documents': typeof AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/insert': typeof AuthenticatedAuthAdminAdminCollectionSlugInsertRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/managers': typeof AuthenticatedAuthAdminAdminCollectionSlugManagersRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/reindex': typeof AuthenticatedAuthAdminAdminCollectionSlugReindexRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/update': typeof AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/users': typeof AuthenticatedAuthAdminAdminCollectionSlugUsersRoute
+  '/_authenticated/_authAdmin/admin/collection/$slug/': typeof AuthenticatedAuthAdminAdminCollectionSlugIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -242,21 +242,21 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/profile'
-    | '/collection/$id'
-    | '/collection/$id/chat'
-    | '/collection/$id/documents'
-    | '/admin/collection/$id'
+    | '/collection/$slug'
+    | '/collection/$slug/chat'
+    | '/collection/$slug/documents'
+    | '/admin/collection/$slug'
     | '/admin/collection/new'
-    | '/admin/users/$id'
+    | '/admin/users/$slug'
     | '/admin/users/'
-    | '/admin/collection/$id/delete'
-    | '/admin/collection/$id/documents'
-    | '/admin/collection/$id/insert'
-    | '/admin/collection/$id/managers'
-    | '/admin/collection/$id/reindex'
-    | '/admin/collection/$id/update'
-    | '/admin/collection/$id/users'
-    | '/admin/collection/$id/'
+    | '/admin/collection/$slug/delete'
+    | '/admin/collection/$slug/documents'
+    | '/admin/collection/$slug/insert'
+    | '/admin/collection/$slug/managers'
+    | '/admin/collection/$slug/reindex'
+    | '/admin/collection/$slug/update'
+    | '/admin/collection/$slug/users'
+    | '/admin/collection/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/change-password'
@@ -265,20 +265,20 @@ export interface FileRouteTypes {
     | '/register'
     | '/'
     | '/profile'
-    | '/collection/$id'
-    | '/collection/$id/chat'
-    | '/collection/$id/documents'
+    | '/collection/$slug'
+    | '/collection/$slug/chat'
+    | '/collection/$slug/documents'
     | '/admin/collection/new'
-    | '/admin/users/$id'
+    | '/admin/users/$slug'
     | '/admin/users'
-    | '/admin/collection/$id/delete'
-    | '/admin/collection/$id/documents'
-    | '/admin/collection/$id/insert'
-    | '/admin/collection/$id/managers'
-    | '/admin/collection/$id/reindex'
-    | '/admin/collection/$id/update'
-    | '/admin/collection/$id/users'
-    | '/admin/collection/$id'
+    | '/admin/collection/$slug/delete'
+    | '/admin/collection/$slug/documents'
+    | '/admin/collection/$slug/insert'
+    | '/admin/collection/$slug/managers'
+    | '/admin/collection/$slug/reindex'
+    | '/admin/collection/$slug/update'
+    | '/admin/collection/$slug/users'
+    | '/admin/collection/$slug'
   id:
     | '__root__'
     | '/_authenticated'
@@ -289,21 +289,21 @@ export interface FileRouteTypes {
     | '/_authenticated/_authAdmin'
     | '/_authenticated/profile'
     | '/_authenticated/'
-    | '/_authenticated/collection/$id'
-    | '/_authenticated/collection/$id/chat'
-    | '/_authenticated/collection/$id/documents'
-    | '/_authenticated/_authAdmin/admin/collection/$id'
+    | '/_authenticated/collection/$slug'
+    | '/_authenticated/collection/$slug/chat'
+    | '/_authenticated/collection/$slug/documents'
+    | '/_authenticated/_authAdmin/admin/collection/$slug'
     | '/_authenticated/_authAdmin/admin/collection/new'
-    | '/_authenticated/_authAdmin/admin/users/$id'
+    | '/_authenticated/_authAdmin/admin/users/$slug'
     | '/_authenticated/_authAdmin/admin/users/'
-    | '/_authenticated/_authAdmin/admin/collection/$id/delete'
-    | '/_authenticated/_authAdmin/admin/collection/$id/documents'
-    | '/_authenticated/_authAdmin/admin/collection/$id/insert'
-    | '/_authenticated/_authAdmin/admin/collection/$id/managers'
-    | '/_authenticated/_authAdmin/admin/collection/$id/reindex'
-    | '/_authenticated/_authAdmin/admin/collection/$id/update'
-    | '/_authenticated/_authAdmin/admin/collection/$id/users'
-    | '/_authenticated/_authAdmin/admin/collection/$id/'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/delete'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/documents'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/insert'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/managers'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/reindex'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/update'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/users'
+    | '/_authenticated/_authAdmin/admin/collection/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -372,26 +372,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuthAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/collection/$id': {
-      id: '/_authenticated/collection/$id'
-      path: '/collection/$id'
-      fullPath: '/collection/$id'
-      preLoaderRoute: typeof AuthenticatedCollectionIdRouteImport
+    '/_authenticated/collection/$slug': {
+      id: '/_authenticated/collection/$slug'
+      path: '/collection/$slug'
+      fullPath: '/collection/$slug'
+      preLoaderRoute: typeof AuthenticatedCollectionSlugRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/collection/$id/documents': {
-      id: '/_authenticated/collection/$id/documents'
+    '/_authenticated/collection/$slug/documents': {
+      id: '/_authenticated/collection/$slug/documents'
       path: '/documents'
-      fullPath: '/collection/$id/documents'
-      preLoaderRoute: typeof AuthenticatedCollectionIdDocumentsRouteImport
-      parentRoute: typeof AuthenticatedCollectionIdRoute
+      fullPath: '/collection/$slug/documents'
+      preLoaderRoute: typeof AuthenticatedCollectionSlugDocumentsRouteImport
+      parentRoute: typeof AuthenticatedCollectionSlugRoute
     }
-    '/_authenticated/collection/$id/chat': {
-      id: '/_authenticated/collection/$id/chat'
+    '/_authenticated/collection/$slug/chat': {
+      id: '/_authenticated/collection/$slug/chat'
       path: '/chat'
-      fullPath: '/collection/$id/chat'
-      preLoaderRoute: typeof AuthenticatedCollectionIdChatRouteImport
-      parentRoute: typeof AuthenticatedCollectionIdRoute
+      fullPath: '/collection/$slug/chat'
+      preLoaderRoute: typeof AuthenticatedCollectionSlugChatRouteImport
+      parentRoute: typeof AuthenticatedCollectionSlugRoute
     }
     '/_authenticated/_authAdmin/admin/users/': {
       id: '/_authenticated/_authAdmin/admin/users/'
@@ -400,11 +400,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuthAdminAdminUsersIndexRouteImport
       parentRoute: typeof AuthenticatedAuthAdminRoute
     }
-    '/_authenticated/_authAdmin/admin/users/$id': {
-      id: '/_authenticated/_authAdmin/admin/users/$id'
-      path: '/admin/users/$id'
-      fullPath: '/admin/users/$id'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminUsersIdRouteImport
+    '/_authenticated/_authAdmin/admin/users/$slug': {
+      id: '/_authenticated/_authAdmin/admin/users/$slug'
+      path: '/admin/users/$slug'
+      fullPath: '/admin/users/$slug'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminUsersSlugRouteImport
       parentRoute: typeof AuthenticatedAuthAdminRoute
     }
     '/_authenticated/_authAdmin/admin/collection/new': {
@@ -414,123 +414,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionNewRouteImport
       parentRoute: typeof AuthenticatedAuthAdminRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id'
-      path: '/admin/collection/$id'
-      fullPath: '/admin/collection/$id'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRouteImport
+    '/_authenticated/_authAdmin/admin/collection/$slug': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug'
+      path: '/admin/collection/$slug'
+      fullPath: '/admin/collection/$slug'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRouteImport
       parentRoute: typeof AuthenticatedAuthAdminRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/'
+    '/_authenticated/_authAdmin/admin/collection/$slug/': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/'
       path: '/'
-      fullPath: '/admin/collection/$id/'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdIndexRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugIndexRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/users': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/users'
+    '/_authenticated/_authAdmin/admin/collection/$slug/users': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/users'
       path: '/users'
-      fullPath: '/admin/collection/$id/users'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdUsersRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/users'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugUsersRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/update': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/update'
+    '/_authenticated/_authAdmin/admin/collection/$slug/update': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/update'
       path: '/update'
-      fullPath: '/admin/collection/$id/update'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/update'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugUpdateRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/reindex': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/reindex'
+    '/_authenticated/_authAdmin/admin/collection/$slug/reindex': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/reindex'
       path: '/reindex'
-      fullPath: '/admin/collection/$id/reindex'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdReindexRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/reindex'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugReindexRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/managers': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/managers'
+    '/_authenticated/_authAdmin/admin/collection/$slug/managers': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/managers'
       path: '/managers'
-      fullPath: '/admin/collection/$id/managers'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdManagersRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/managers'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugManagersRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/insert': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/insert'
+    '/_authenticated/_authAdmin/admin/collection/$slug/insert': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/insert'
       path: '/insert'
-      fullPath: '/admin/collection/$id/insert'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdInsertRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/insert'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugInsertRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/documents': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/documents'
+    '/_authenticated/_authAdmin/admin/collection/$slug/documents': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/documents'
       path: '/documents'
-      fullPath: '/admin/collection/$id/documents'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdDocumentsRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/documents'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugDocumentsRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
-    '/_authenticated/_authAdmin/admin/collection/$id/delete': {
-      id: '/_authenticated/_authAdmin/admin/collection/$id/delete'
+    '/_authenticated/_authAdmin/admin/collection/$slug/delete': {
+      id: '/_authenticated/_authAdmin/admin/collection/$slug/delete'
       path: '/delete'
-      fullPath: '/admin/collection/$id/delete'
-      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionIdDeleteRouteImport
-      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRoute
+      fullPath: '/admin/collection/$slug/delete'
+      preLoaderRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugDeleteRouteImport
+      parentRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRoute
     }
   }
 }
 
-interface AuthenticatedAuthAdminAdminCollectionIdRouteChildren {
-  AuthenticatedAuthAdminAdminCollectionIdDeleteRoute: typeof AuthenticatedAuthAdminAdminCollectionIdDeleteRoute
-  AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute: typeof AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute
-  AuthenticatedAuthAdminAdminCollectionIdInsertRoute: typeof AuthenticatedAuthAdminAdminCollectionIdInsertRoute
-  AuthenticatedAuthAdminAdminCollectionIdManagersRoute: typeof AuthenticatedAuthAdminAdminCollectionIdManagersRoute
-  AuthenticatedAuthAdminAdminCollectionIdReindexRoute: typeof AuthenticatedAuthAdminAdminCollectionIdReindexRoute
-  AuthenticatedAuthAdminAdminCollectionIdUpdateRoute: typeof AuthenticatedAuthAdminAdminCollectionIdUpdateRoute
-  AuthenticatedAuthAdminAdminCollectionIdUsersRoute: typeof AuthenticatedAuthAdminAdminCollectionIdUsersRoute
-  AuthenticatedAuthAdminAdminCollectionIdIndexRoute: typeof AuthenticatedAuthAdminAdminCollectionIdIndexRoute
+interface AuthenticatedAuthAdminAdminCollectionSlugRouteChildren {
+  AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute
+  AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute
+  AuthenticatedAuthAdminAdminCollectionSlugInsertRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugInsertRoute
+  AuthenticatedAuthAdminAdminCollectionSlugManagersRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugManagersRoute
+  AuthenticatedAuthAdminAdminCollectionSlugReindexRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugReindexRoute
+  AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute
+  AuthenticatedAuthAdminAdminCollectionSlugUsersRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugUsersRoute
+  AuthenticatedAuthAdminAdminCollectionSlugIndexRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugIndexRoute
 }
 
-const AuthenticatedAuthAdminAdminCollectionIdRouteChildren: AuthenticatedAuthAdminAdminCollectionIdRouteChildren =
+const AuthenticatedAuthAdminAdminCollectionSlugRouteChildren: AuthenticatedAuthAdminAdminCollectionSlugRouteChildren =
   {
-    AuthenticatedAuthAdminAdminCollectionIdDeleteRoute:
-      AuthenticatedAuthAdminAdminCollectionIdDeleteRoute,
-    AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute:
-      AuthenticatedAuthAdminAdminCollectionIdDocumentsRoute,
-    AuthenticatedAuthAdminAdminCollectionIdInsertRoute:
-      AuthenticatedAuthAdminAdminCollectionIdInsertRoute,
-    AuthenticatedAuthAdminAdminCollectionIdManagersRoute:
-      AuthenticatedAuthAdminAdminCollectionIdManagersRoute,
-    AuthenticatedAuthAdminAdminCollectionIdReindexRoute:
-      AuthenticatedAuthAdminAdminCollectionIdReindexRoute,
-    AuthenticatedAuthAdminAdminCollectionIdUpdateRoute:
-      AuthenticatedAuthAdminAdminCollectionIdUpdateRoute,
-    AuthenticatedAuthAdminAdminCollectionIdUsersRoute:
-      AuthenticatedAuthAdminAdminCollectionIdUsersRoute,
-    AuthenticatedAuthAdminAdminCollectionIdIndexRoute:
-      AuthenticatedAuthAdminAdminCollectionIdIndexRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugDeleteRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugDocumentsRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugInsertRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugInsertRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugManagersRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugManagersRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugReindexRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugReindexRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugUpdateRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugUsersRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugUsersRoute,
+    AuthenticatedAuthAdminAdminCollectionSlugIndexRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugIndexRoute,
   }
 
-const AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren =
-  AuthenticatedAuthAdminAdminCollectionIdRoute._addFileChildren(
-    AuthenticatedAuthAdminAdminCollectionIdRouteChildren,
+const AuthenticatedAuthAdminAdminCollectionSlugRouteWithChildren =
+  AuthenticatedAuthAdminAdminCollectionSlugRoute._addFileChildren(
+    AuthenticatedAuthAdminAdminCollectionSlugRouteChildren,
   )
 
 interface AuthenticatedAuthAdminRouteChildren {
-  AuthenticatedAuthAdminAdminCollectionIdRoute: typeof AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren
+  AuthenticatedAuthAdminAdminCollectionSlugRoute: typeof AuthenticatedAuthAdminAdminCollectionSlugRouteWithChildren
   AuthenticatedAuthAdminAdminCollectionNewRoute: typeof AuthenticatedAuthAdminAdminCollectionNewRoute
-  AuthenticatedAuthAdminAdminUsersIdRoute: typeof AuthenticatedAuthAdminAdminUsersIdRoute
+  AuthenticatedAuthAdminAdminUsersSlugRoute: typeof AuthenticatedAuthAdminAdminUsersSlugRoute
   AuthenticatedAuthAdminAdminUsersIndexRoute: typeof AuthenticatedAuthAdminAdminUsersIndexRoute
 }
 
 const AuthenticatedAuthAdminRouteChildren: AuthenticatedAuthAdminRouteChildren =
   {
-    AuthenticatedAuthAdminAdminCollectionIdRoute:
-      AuthenticatedAuthAdminAdminCollectionIdRouteWithChildren,
+    AuthenticatedAuthAdminAdminCollectionSlugRoute:
+      AuthenticatedAuthAdminAdminCollectionSlugRouteWithChildren,
     AuthenticatedAuthAdminAdminCollectionNewRoute:
       AuthenticatedAuthAdminAdminCollectionNewRoute,
-    AuthenticatedAuthAdminAdminUsersIdRoute:
-      AuthenticatedAuthAdminAdminUsersIdRoute,
+    AuthenticatedAuthAdminAdminUsersSlugRoute:
+      AuthenticatedAuthAdminAdminUsersSlugRoute,
     AuthenticatedAuthAdminAdminUsersIndexRoute:
       AuthenticatedAuthAdminAdminUsersIndexRoute,
   }
@@ -540,35 +540,36 @@ const AuthenticatedAuthAdminRouteWithChildren =
     AuthenticatedAuthAdminRouteChildren,
   )
 
-interface AuthenticatedCollectionIdRouteChildren {
-  AuthenticatedCollectionIdChatRoute: typeof AuthenticatedCollectionIdChatRoute
-  AuthenticatedCollectionIdDocumentsRoute: typeof AuthenticatedCollectionIdDocumentsRoute
+interface AuthenticatedCollectionSlugRouteChildren {
+  AuthenticatedCollectionSlugChatRoute: typeof AuthenticatedCollectionSlugChatRoute
+  AuthenticatedCollectionSlugDocumentsRoute: typeof AuthenticatedCollectionSlugDocumentsRoute
 }
 
-const AuthenticatedCollectionIdRouteChildren: AuthenticatedCollectionIdRouteChildren =
+const AuthenticatedCollectionSlugRouteChildren: AuthenticatedCollectionSlugRouteChildren =
   {
-    AuthenticatedCollectionIdChatRoute: AuthenticatedCollectionIdChatRoute,
-    AuthenticatedCollectionIdDocumentsRoute:
-      AuthenticatedCollectionIdDocumentsRoute,
+    AuthenticatedCollectionSlugChatRoute: AuthenticatedCollectionSlugChatRoute,
+    AuthenticatedCollectionSlugDocumentsRoute:
+      AuthenticatedCollectionSlugDocumentsRoute,
   }
 
-const AuthenticatedCollectionIdRouteWithChildren =
-  AuthenticatedCollectionIdRoute._addFileChildren(
-    AuthenticatedCollectionIdRouteChildren,
+const AuthenticatedCollectionSlugRouteWithChildren =
+  AuthenticatedCollectionSlugRoute._addFileChildren(
+    AuthenticatedCollectionSlugRouteChildren,
   )
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAuthAdminRoute: typeof AuthenticatedAuthAdminRouteWithChildren
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedCollectionIdRoute: typeof AuthenticatedCollectionIdRouteWithChildren
+  AuthenticatedCollectionSlugRoute: typeof AuthenticatedCollectionSlugRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuthAdminRoute: AuthenticatedAuthAdminRouteWithChildren,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedCollectionIdRoute: AuthenticatedCollectionIdRouteWithChildren,
+  AuthenticatedCollectionSlugRoute:
+    AuthenticatedCollectionSlugRouteWithChildren,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

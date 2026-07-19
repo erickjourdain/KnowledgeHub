@@ -52,7 +52,7 @@ class DocumentDetailResponse(DocumentResponse):
 # === RAG Schemas ===
 class RagQuery(BaseModel):
     query: str
-    collection_id: int
+    collection_id: int | str
     conversation_uuid: Optional[str] = None
     title: Optional[str] = None
     model: Optional[str] = None
@@ -113,6 +113,7 @@ class UserCreate(UserBase):
 
 class UserResponse(UserBase):
     id: int
+    slug: str
     is_active: bool
     role: RoleEnum
     icon: Optional[str] = None
@@ -176,9 +177,9 @@ class CollectionBase(BaseModel):
     def validate_name(cls, v):
         if len(v) < 5:
             raise ValueError('Le nom doit contenir au moins 5 caractères')
-        if not re.match(r'^[a-zA-Z0-9_]+$', v):
-            raise ValueError('Le nom ne doit contenir que des lettres, chiffres et underscores (pas d\'espaces ni caractères spéciaux)')
-        return v
+        if len(v) > 25:
+            raise ValueError('Le nom doit contenir au maximum 25 caractères')
+        return v.upper()
 
     @field_validator('description')
     @classmethod
@@ -201,8 +202,9 @@ class CollectionUpdate(BaseModel):
         if v is not None:
             if len(v) < 5:
                 raise ValueError('Le nom doit contenir au moins 5 caractères')
-            if not re.match(r'^[a-zA-Z0-9_]+$', v):
-                raise ValueError('Le nom ne doit contenir que des lettres, chiffres et underscores (pas d\'espaces ni caractères spéciaux)')
+            if len(v) > 25:
+                raise ValueError('Le nom doit contenir au maximum 25 caractères')
+            return v.upper()
         return v
 
     @field_validator('description')
@@ -215,6 +217,7 @@ class CollectionUpdate(BaseModel):
 class CollectionResponse(CollectionBase):
     id: int
     uuid: str
+    slug: str
     creator_id: int
     manager_ids: List[int] = []
     created_at: datetime

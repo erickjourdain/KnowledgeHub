@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useLoaderData } from '@tanstack/react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { useAtom, useSetAtom } from 'jotai';
@@ -42,14 +42,16 @@ type ModelPagination = {
   search: string | null;
 }
 
-export const Route = createFileRoute('/_authenticated/collection/$id/chat')({
+export const Route = createFileRoute('/_authenticated/collection/$slug/chat')({
   component: RouteComponent
 });
 
 function RouteComponent() {
   const auth = useAuth();
   const queryClient = useQueryClient();
-  const { id } = Route.useParams();
+  const { slug: _slug } = Route.useParams();
+  const parentCollection = useLoaderData({ from: '/_authenticated/collection/$slug' });
+  const id = String(parentCollection.id);
   const setJobId = useSetAtom(jobQueryAtom);
 
   const [models, setModelsList] = useState<LlmModel[]>([]);

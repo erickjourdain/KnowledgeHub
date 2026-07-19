@@ -27,7 +27,7 @@ def query_rag(
     try:
         # Vérifier que l'utilisateur a accès à la collection
         collection = get_collection_without_relations(
-            collection_id=query.collection_id,
+            collection_id_or_slug=query.collection_id,
             user=current_user,
             db=db
         )

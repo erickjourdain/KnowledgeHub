@@ -57,9 +57,9 @@ def get_messages(
         raise HTTPException(status_code=500, detail="Erreur lors de la récupération des messages")
     
 
-@router.get("/collection/{collection_id}", response_model=PaginatedResponse[ConversationResponse])
+@router.get("/collection/{collection_id_or_slug}", response_model=PaginatedResponse[ConversationResponse])
 def get_conversations(
-    collection_id: int,
+    collection_id_or_slug: str,
     search: Optional[str] = None,
     skip: int = 0,
     limit: int = 20,
@@ -68,14 +68,14 @@ def get_conversations(
 ):
     """Récupérer les conversations d'une collection"""
     try:
-        collection = get_collection_without_relations(collection_id, current_user, db)
+        collection = get_collection_without_relations(collection_id_or_slug, current_user, db)
         if not collection:
             raise HTTPException(status_code=404, detail="Collection non trouvée")
         
         limit = 20 if limit > 20 else limit
         response = PaginatedResponse(
             data = get_collection_conversations(
-                collection_id=collection_id,
+                collection_id=collection.id,
                 offset=skip,
                 limit=limit,
                 user=current_user,
@@ -83,7 +83,7 @@ def get_conversations(
                 search=search
             ),
             count = get_nb_collection_conversations(
-                collection_id=collection_id,
+                collection_id=collection.id,
                 user=current_user,
                 db=db,
                 search=search
@@ -91,8 +91,8 @@ def get_conversations(
         )
         return response
     except Exception as e:
-        print(f"Error in conversation retreival {e}")
-        raise HTTPException(status_code=500, detail="Erreur lors de la récupération de la convesration")
+        print(f"Error in conversation retrieval {e}")
+        raise HTTPException(status_code=500, detail="Erreur lors de la récupération de la conversation")
     
 
 @router.put("/{conversation_uuid}", response_model=ConversationResponse)

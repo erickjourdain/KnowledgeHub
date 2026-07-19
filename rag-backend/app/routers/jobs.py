@@ -15,7 +15,7 @@ from app.models.enum import RoleEnum
 from app.models.user import User
 from app.schemas import JobIngestionResponse, JobKbResponse, JobResponse
 from app.services.cleanup import cleanup_finished_ingestion_jobs
-from app.services.collections import check_is_gestionnaire
+from app.services.collections import check_is_gestionnaire, get_collection_without_relations
 
 
 router = APIRouter()
@@ -60,9 +60,9 @@ def get_ingestion_job(
         
     raise HTTPException(status_code=403, detail="Vous n'avez pas la permission d'accèder à ce job")
 
-@router.get("/ingestion/collection/{collection_id}", response_model=list[JobIngestionResponse])
+@router.get("/ingestion/collection/{collection_id_or_slug}", response_model=list[JobIngestionResponse])
 def get_insertion_job_collection(
-    collection_id: int,
+    collection_id_or_slug: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -70,7 +70,7 @@ def get_insertion_job_collection(
     if current_user.role not in [RoleEnum.ADMIN, RoleEnum.GESTIONNAIRE]:
         raise HTTPException(status_code=403, detail="Vous n'avez pas accès à ces informations") 
 
-    collection = db.query(Collection).filter(Collection.id == collection_id).first()
+    collection = get_collection_without_relations(collection_id_or_slug, current_user, db)
     if not collection:
         raise HTTPException(status_code=404, detail="Collection non trouvée")
     
@@ -79,7 +79,7 @@ def get_insertion_job_collection(
    
     response =  db.query(JobIngestion).order_by(JobIngestion.created_at.desc()).filter(and_(
         JobIngestion.created_at + timedelta(days=5) > datetime.now() 
-        , JobIngestion.collection_id == collection_id)).limit(20).all()
+        , JobIngestion.collection_id == collection.id)).limit(20).all()
     
     print(f"{response}")
     return response
@@ -114,9 +114,9 @@ def get_kb_job(
         
     raise HTTPException(status_code=403, detail="Vous n'avez pas la permission d'accèder à ce job")
 
-@router.get("/kb/collection/{collection_id}/user/{user_id}", response_model=list[JobKbResponse])
+@router.get("/kb/collection/{collection_id_or_slug}/user/{user_id}", response_model=list[JobKbResponse])
 def get_kb_job_collection_user(
-    collection_id: int,
+    collection_id_or_slug: str,
     user_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -125,7 +125,7 @@ def get_kb_job_collection_user(
     if current_user.role not in [RoleEnum.ADMIN, RoleEnum.GESTIONNAIRE] and current_user.id != user_id:
         raise HTTPException(status_code=403, detail="Vous n'avez pas accès à ces informations") 
 
-    collection = db.query(Collection).filter(Collection.id == collection_id).first()
+    collection = get_collection_without_relations(collection_id_or_slug, current_user, db)
     if not collection:
         raise HTTPException(status_code=404, detail="Collection non trouvée")
     
@@ -134,7 +134,7 @@ def get_kb_job_collection_user(
             raise HTTPException(status_code=403, detail="Vous n'avez pas accès à ces informations") 
        
     response =  db.query(JobQueryKb).order_by(JobQueryKb.created_at.desc()).filter(and_(
-        JobQueryKb.collection_id == collection_id
+        JobQueryKb.collection_id == collection.id
         , JobQueryKb.creator_id == user_id
         , JobQueryKb.status == "finished")).limit(20).all()
     

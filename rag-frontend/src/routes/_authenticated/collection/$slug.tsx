@@ -14,11 +14,11 @@ import { fetchCollection } from '@api/collections';
 import { collectionAtom } from '@store/collectionStore';
 
 
-export const Route = createFileRoute('/_authenticated/collection/$id')({
+export const Route = createFileRoute('/_authenticated/collection/$slug')({
   loader: async ({ params, context: { queryClient } }) => {
     return await queryClient.ensureQueryData({
-      queryKey: ['collections', { id: params.id }],
-      queryFn: () => fetchCollection(params.id)
+      queryKey: ['collections', { slug: params.slug }],
+      queryFn: () => fetchCollection(params.slug)
     })
   },
   component: RouteComponent,

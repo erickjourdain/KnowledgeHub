@@ -25,14 +25,14 @@ import ConfirmationMessage from '@components/ConfirmationMessage';
 import AdminPageHeader from '@components/AdminPageHeader';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id/update',
+  '/_authenticated/_authAdmin/admin/collection/$slug/update',
 )({
   component: RouteComponent,
 });
 
 function RouteComponent() {
   const collection = useLoaderData({
-    from: '/_authenticated/_authAdmin/admin/collection/$id'
+    from: '/_authenticated/_authAdmin/admin/collection/$slug'
   }) as Collection | undefined;
   if (!collection) {
     return <Typography variant='h6'>Collection introuvable</Typography>;
@@ -101,9 +101,6 @@ function RouteComponent() {
         case "maxLength":
           message = "Le nom de la collection ne peut contenir plus de 25 cractères";
           break;
-        case "pattern":
-          message = "Le nom de la colection ne peut contenir de blanc ou caractères spéciaux";
-          break;
         default:
           message = "Le nom de la collection n'est pas correct";
           break;
@@ -139,9 +136,9 @@ function RouteComponent() {
 
   return (
     <Grid size={8} pt={2}>
-      <AdminPageHeader 
-        title="Mettre à jour" 
-        icon={<SettingsIcon />} 
+      <AdminPageHeader
+        title="Mettre à jour"
+        icon={<SettingsIcon />}
       />
       <Paper
         variant="outlined"
@@ -192,8 +189,7 @@ function RouteComponent() {
             ...register("name", {
               required: "Le nom de la collection est obligatoire.",
               minLength: 5,
-              maxLength: 25,
-              pattern: /^[a-zA-Z0-9_-]+$/
+              maxLength: 25
             })
             }
           />

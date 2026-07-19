@@ -26,7 +26,7 @@ const fetchUsers =
   }
 }
 
-const fetchUser = async (userId: number): Promise<User> => {
+const fetchUser = async (userId: number | string): Promise<User> => {
   try {
     const response = await instance.get(`/users/${userId}`);
     return response.data as User;
@@ -35,7 +35,7 @@ const fetchUser = async (userId: number): Promise<User> => {
   }
 }
 
-const updateUser = async (userId: number, data: Partial<User>): Promise<User> => {
+const updateUser = async (userId: number | string, data: Partial<User>): Promise<User> => {
   try {
     const response = await instance.put(`/users/${userId}`, data);
     return response.data as User;
@@ -57,7 +57,7 @@ const registerUser = async (username: string, email: string, password: string): 
   }
 }
 
-const activateUser = async (userId: number): Promise<ApiMessage> => {
+const activateUser = async (userId: number | string): Promise<ApiMessage> => {
   try {
     const response = await instance.post(`/users/activate/${userId}`);
     return response.data as ApiMessage;
@@ -66,7 +66,7 @@ const activateUser = async (userId: number): Promise<ApiMessage> => {
   }
 }
 
-const deactivateUser = async (userId: number): Promise<ApiMessage> => {
+const deactivateUser = async (userId: number | string): Promise<ApiMessage> => {
   try {
     const response = await instance.post(`/users/deactivate/${userId}`);
     return response.data as ApiMessage;

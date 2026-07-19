@@ -30,13 +30,13 @@ import { isAdmin } from '@utils/security';
 import { AppError } from '@utils/errors';
 
 export const Route = createFileRoute(
-  '/_authenticated/_authAdmin/admin/collection/$id',
+  '/_authenticated/_authAdmin/admin/collection/$slug',
 )({
-  loader: async ({ params: { id }, context: { auth, queryClient } }) => {
+  loader: async ({ params: { slug }, context: { auth, queryClient } }) => {
     try {
       const collection = await queryClient.ensureQueryData({
-        queryKey: ['collections', String(id)],
-        queryFn: () => fetchCollection(id)
+        queryKey: ['collections', String(slug)],
+        queryFn: () => fetchCollection(slug)
       })
       if (isAdmin(auth.user) || (collection.manager_ids && auth.user && collection.manager_ids.includes(auth.user.id))) {
         return collection;
@@ -114,7 +114,7 @@ function RouteComponent() {
   const collection = Route.useLoaderData();
   const navigate = useNavigate();
   const router = useRouter();
-  const { id } = Route.useParams();
+  const { slug } = Route.useParams();
   const setCollection = useSetAtom(collectionAtom);
 
   const currentPath = router.state.location.pathname;
@@ -125,7 +125,7 @@ function RouteComponent() {
   }, [collection, setCollection]);
 
   const handleClick = (item: Item) => {
-    navigate({ to: `/admin/collection/$id/${item.path}`, params: { id } })
+    navigate({ to: `/admin/collection/$slug/${item.path}`, params: { slug } })
   }
 
   return (

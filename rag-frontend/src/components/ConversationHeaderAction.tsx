@@ -5,7 +5,7 @@ import IconButton from '@mui/material/IconButton';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RenameIcon from '@mui/icons-material/DriveFileRenameOutline';
 import { useQueryClient } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
+import { useParams, useLoaderData } from '@tanstack/react-router';
 import { conversationAtom } from '@store/conversationStore';
 import { delConversation } from '@api/conversation';
 import ConfirmationDialog from '@components/ConfirmationDialog';
@@ -17,9 +17,13 @@ const ConversationHeaderAction = React.forwardRef<HTMLDivElement, CustomActionsP
   props,
   ref,
 ) {
-  const { id } = useParams({
-    from: '/_authenticated/collection/$id/chat'
+  const { slug: _slug } = useParams({
+    from: '/_authenticated/collection/$slug/chat'
   });
+  const collection = useLoaderData({
+    from: '/_authenticated/collection/$slug'
+  });
+  const id = String(collection.id);
   const queryClient = useQueryClient();
   const { conversations, activeConversationId } = useChat();
   const setConversationState = useSetAtom(conversationAtom);

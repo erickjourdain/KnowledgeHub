@@ -9,6 +9,7 @@ interface BaseCollection {
   manager_ids?: number[];
   created_at: Date;
   updated_at: Date;
+  slug: string;
 }
 
 export interface Collection extends BaseCollection {
