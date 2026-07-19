@@ -19,6 +19,7 @@ import {
 } from "@store/jobReindexStore";
 
 import { jobQueryAtom } from "@store/jobQueryStore";
+import { useQueryClient } from "@tanstack/react-query";
 import type { JobDocument, JobInfoStatut } from "@appTypes/Job";
 import { fecthIngestionJob } from "@api/jobs";
 
@@ -60,6 +61,7 @@ export function WebSocketProvider({
 }) {
   const socketRef = useRef<WebSocket | null>(null);
   const subscribedJobsRef = useRef<Set<string>>(new Set());
+  const queryClient = useQueryClient();
 
   const [jobIngestionIds, setJobIngestionIds] = useAtom(jobIngestionIdsAtom);
   const [jobReindexIds, setJobReindexIds] = useAtom(jobReindexIdsAtom);
@@ -131,6 +133,9 @@ export function WebSocketProvider({
         if (data.progress === 100) {
           setJobIngestionIds((prev) => prev.filter((id) => id !== data.job_id));
           setJobIngestionUpdated(true);
+          // Invalider les requêtes pour rafraîchir l'interface utilisateur
+          queryClient.resetQueries({ queryKey: ['collections'] });
+          queryClient.resetQueries({ queryKey: ['finishedIngestionJobs'] });
         }
         updateJobIngestion(data);
       } else if (jobReindexIdsRef.current.includes(data.job_id)) {
@@ -155,6 +160,8 @@ export function WebSocketProvider({
             ...data,
             filename: response.filename,
           });
+          // Invalider les requêtes pour rafraîchir l'interface utilisateur
+          queryClient.resetQueries({ queryKey: ['collections'] });
         }
         updateJobReindex(data);
         console.log('Updated reindex store for job', data.job_id, data);

@@ -75,7 +75,8 @@ function RouteComponent() {
     if (isSuccess) {
       setOpenSnackbar(true);
       queryClient.resetQueries({ queryKey: ['collections'] });
-      queryClient.resetQueries({ queryKey: ['collections', String(collection.id)] });
+      queryClient.resetQueries({ queryKey: ['collections', collection.slug] });
+      queryClient.resetQueries({ queryKey: ['collections', { slug: collection.slug }] });
       router.invalidate();
     }
   }, [isSuccess]);

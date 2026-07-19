@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { createFileRoute, Outlet, useNavigate, useRouter } from '@tanstack/react-router';
+import { createFileRoute, Outlet, useNavigate, useLocation } from '@tanstack/react-router';
 import { useSetAtom } from 'jotai';
 import { collectionAtom } from '@store/collectionStore';
 import {
@@ -113,11 +113,10 @@ const ITEMS: Item[] = [
 function RouteComponent() {
   const collection = Route.useLoaderData();
   const navigate = useNavigate();
-  const router = useRouter();
   const { slug } = Route.useParams();
   const setCollection = useSetAtom(collectionAtom);
-
-  const currentPath = router.state.location.pathname;
+  const location = useLocation();
+  const currentPath = location.pathname;
 
   useEffect(() => {
     setCollection(collection);

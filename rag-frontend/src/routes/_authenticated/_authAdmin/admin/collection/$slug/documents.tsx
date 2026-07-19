@@ -92,7 +92,10 @@ function RouteComponent() {
             setColor("success");
             setOpenSnackbar(true);
             queryClient.resetQueries({
-              queryKey: ['collections', String(collection.id), 'documents', paginationModel.page, paginationModel.pageSize]
+              queryKey: ['collections', collection.slug]
+            });
+            queryClient.resetQueries({
+              queryKey: ['collections', { slug: collection.slug }]
             });
             router.invalidate();
           } else throw new Error("Erreur lors de la suppression du document");

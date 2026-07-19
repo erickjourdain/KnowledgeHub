@@ -47,10 +47,16 @@ function RouteComponent() {
   useEffect(() => {
     if (jobIngestionUpdated) {
       queryClient.resetQueries({
-        queryKey: ['finishedIngestionJobs', String(collection.id)]
+        queryKey: ['finishedIngestionJobs', collection.slug]
       });
       queryClient.resetQueries({
-        queryKey: ['collections', String(collection.id)]
+        queryKey: ['collections', collection.slug]
+      });
+      queryClient.resetQueries({
+        queryKey: ['collections', { slug: collection.slug }]
+      });
+      queryClient.resetQueries({
+        queryKey: ['collections', collection.slug, 'documents']
       });
       setJobIngestionUpdated(false);
       router.invalidate();

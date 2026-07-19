@@ -115,10 +115,13 @@ function RouteComponent() {
         await addCollectionManager(String(id), String(params.row.id));
       
       queryClient.resetQueries({
-        queryKey: ['collections', String(id)]
+        queryKey: ['collections', parentCollection.slug]
       });
       queryClient.resetQueries({
-        queryKey: ['authorizedManagers', String(id)]
+        queryKey: ['collections', { slug: parentCollection.slug }]
+      });
+      queryClient.resetQueries({
+        queryKey: ['authorizedManagers', parentCollection.slug]
       });
       router.invalidate();
     } catch (error: any) {

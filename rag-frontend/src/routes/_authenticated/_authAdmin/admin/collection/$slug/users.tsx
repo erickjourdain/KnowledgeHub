@@ -109,7 +109,7 @@ function RouteComponent() {
       else
         await addCollectionUser(String(id), String(params.row.id));
       queryClient.resetQueries({
-        queryKey: ['authorizedUsers', String(id), data.map(d => d.id).join(',')]
+        queryKey: ['authorizedUsers', parentCollection.slug]
       });
       router.invalidate();
     } catch (error) {
